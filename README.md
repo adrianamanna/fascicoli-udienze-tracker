@@ -6,6 +6,14 @@ App per organizzare il calendario delle udienze di un giudice penale: giornata c
 - **I dati restano sul computer**, nell'archivio del browser. Nessun invio a server e nessun cloud.
 - **Calcoli deterministici**: stesse informazioni, stesso risultato. Nessuna intelligenza artificiale e nessuna stima.
 
+## Progetto personale
+
+Questo è un **progetto personale**, sviluppato a titolo individuale nel tempo libero. Non è un prodotto ufficiale e non è collegato a nessun datore di lavoro, tribunale o ufficio giudiziario.
+
+- È **in sviluppo** e viene offerto **così com'è**, senza garanzie (vedi `LICENSE`).
+- **Non è consulenza legale.** Termini e regole di legge usati dai calcoli (artt. 429, 456, 552 c.p.p. e altri) sono presi da fonti di consultazione e vanno **controllati sui testi vigenti** prima di farci affidamento. L'ultima parola spetta sempre al giudice.
+- Le regole sono quelle di un'unica prassi di udienza e possono non valere per altri uffici.
+
 ## Scaricare l'app
 
 1. Apri la pagina **Releases** di questo repository (colonna di destra, oppure la scheda *Code* > *Releases*).
@@ -92,3 +100,7 @@ Esegue tutti i test dei calcoli (date, festività, giornata, predibattimento, in
    git push origin v0.4.0
    ```
 3. Controlla `git status` **prima** del commit: devono comparire solo file dell'app, dei test e della documentazione.
+
+## Licenza
+
+Codice rilasciato con licenza [MIT](LICENSE): si può usare, copiare e modificare liberamente, senza alcuna garanzia.

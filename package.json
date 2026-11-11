@@ -3,6 +3,7 @@
   "version": "0.4.1",
   "description": "Fascicoli Udienze Tracker: calendario delle udienze e dei fascicoli del giudice penale. App locale, senza server, con calcoli deterministici.",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "test": "node tests/run-tests.js"
   },
