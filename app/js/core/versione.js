@@ -2,5 +2,5 @@
 (function (root) {
   'use strict';
   var GC = (root.GC = root.GC || {});
-  GC.versione = '0.5.0';
+  GC.versione = '0.6.0';
 })(typeof globalThis !== 'undefined' ? globalThis : this);

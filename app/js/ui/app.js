@@ -17,6 +17,7 @@
     mese: 0,
     giorno: '',
     cercaFasc: '',
+    faseFasc: '',
     salvataggio: { testo: '', errore: false },
     // File dei dati scelto dall'utente: stato = nessuno | collegato | da-riaprire | nonSupportato
     file: { handle: null, stato: 'nessuno', errore: '' },
@@ -595,6 +596,7 @@
     const rinvio0 = base.rinvioDal && D.isValidYmd(base.rinvioDal) ? D.fmtIt(base.rinvioDal) : (base.rinvioDal || '');
     const fRinvio = h('input', { type: 'text', value: rinvio0, placeholder: 'gg/mm/aaaa oppure 1 UD' });
     const fEsito = h('input', { type: 'text', value: base.esito || '', placeholder: 'Da compilare dopo l\'udienza' });
+    const fFase = h('select', null, h('option', { value: '' }, esistente ? 'Non indicata (si ricava: ' + M.FASI[M.faseDi(esistente, stato)] + ')' : 'Non indicata'), Object.keys(M.FASI).map(function (k) { return h('option', { value: k, selected: k === base.fase }, M.FASI[k]); }));
     const fNote = h('textarea', null, base.note || '');
     const fSovr = h('input', { type: 'checkbox', checked: !!base.sovrapponibile, onChange: aggiornaMessaggi });
     const msg = h('div', { class: 'intera' });
@@ -738,6 +740,7 @@
       h('label', { class: 'campo' }, 'Numero di ruolo (RG)', fRg),
       h('label', { class: 'campo' }, 'Imputato', fImp),
       h('label', { class: 'campo' }, 'Origine', fOri),
+      h('label', { class: 'campo' }, 'Fase del fascicolo', fFase),
       h('label', { class: 'campo' }, 'Numero d\'ordine', fNrOrd),
       h('label', { class: 'campo' }, 'Reato', fReato),
       h('label', { class: 'campo' }, 'P.M. titolare', fPm),
@@ -770,7 +773,7 @@
     const piede = [
       h('button', { class: 'btn btn-primario', type: 'button', onClick: function () {
         errori.replaceChildren();
-        const dati = { rg: fRg.value, imputato: fImp.value, origine: fOri.value, detenuto: fDet.checked, note: fNote.value, reato: fReato.value, pm: fPm.value, nrOrd: fNrOrd.value, ricezione: fRic.value, notificaCitazione: fNot.value, urgente: fUrg.checked, predibDaFissare: fDaFissare.checked, dataProvvedimento: fProv.value, incameramentoDaFissare: fDaInc.checked };
+        const dati = { rg: fRg.value, imputato: fImp.value, origine: fOri.value, fase: fFase.value, detenuto: fDet.checked, note: fNote.value, reato: fReato.value, pm: fPm.value, nrOrd: fNrOrd.value, ricezione: fRic.value, notificaCitazione: fNot.value, urgente: fUrg.checked, predibDaFissare: fDaFissare.checked, dataProvvedimento: fProv.value, incameramentoDaFissare: fDaInc.checked };
         const r = esistente ? M.updateFascicolo(stato, esistente.id, dati) : M.addFascicolo(stato, dati);
         if (!r.ok) {
           errori.append(h('div', { class: 'messaggio errore' }, h('ul', null, r.errori.map(function (x) { return h('li', null, x); }))));
@@ -1197,12 +1200,18 @@
   /* ---------- fascicoli ---------- */
 
   function vistaFascicoli() {
-    const q = ui.cercaFasc.trim().toLowerCase();
-    const elenco = stato.fascicoli.filter(function (f) {
-      return !q || (f.rg + ' ' + f.imputato + ' ' + (f.reato || '')).toLowerCase().indexOf(q) >= 0;
-    }).sort(function (a, b) {
-      return (a.rg || '￿') < (b.rg || '￿') ? -1 : 1;
+    const elenco = M.filtraFascicoli(stato, { testo: ui.cercaFasc, fase: ui.faseFasc });
+    const conta = {};
+    stato.fascicoli.forEach(function (f) {
+      const k = M.faseDi(f, stato);
+      conta[k] = (conta[k] || 0) + 1;
     });
+    const selFase = h('select', { 'aria-label': 'Filtra per fase' },
+      h('option', { value: '' }, 'Tutte le fasi (' + stato.fascicoli.length + ')'),
+      Object.keys(M.FASI).filter(function (k) { return conta[k]; }).map(function (k) {
+        return h('option', { value: k, selected: k === ui.faseFasc }, M.FASI[k] + ' (' + conta[k] + ')');
+      }));
+    selFase.addEventListener('change', function () { ui.faseFasc = selFase.value; render(); });
     const oggi = D.today();
     const ricerca = h('input', { type: 'search', value: ui.cercaFasc, placeholder: 'Cerca per RG o imputato', 'aria-label': 'Cerca fascicoli' });
     ricerca.addEventListener('input', function () {
@@ -1215,10 +1224,10 @@
     return [
       h('h1', { class: 'titolo-pagina' }, 'Fascicoli'),
       h('p', { class: 'sottotitolo' }, 'Elenco dei fascicoli con la prossima attività prevista. I fascicoli nascono anche dall\'importazione da Excel o quando aggiungi un\'attività.'),
-      h('div', { class: 'barra-strumenti' }, h('label', { class: 'campo' }, 'Cerca', ricerca), h('button', { class: 'btn btn-primario', onClick: function () { dialogoFascicolo(null); } }, 'Nuovo fascicolo')),
+      h('div', { class: 'barra-strumenti' }, h('label', { class: 'campo' }, 'Cerca', ricerca), h('label', { class: 'campo' }, 'Fase', selFase), h('button', { class: 'btn btn-primario', onClick: function () { dialogoFascicolo(null); } }, 'Nuovo fascicolo')),
       elenco.length
         ? h('div', { class: 'scorri', style: 'max-height:none' }, h('table', { class: 'tabella' },
-          h('thead', null, h('tr', null, ['RG', 'Imputato', 'Reato', 'Origine', 'Detenuto', 'Prossima attività', 'Attività', ''].map(function (x) { return h('th', null, x); }))),
+          h('thead', null, h('tr', null, ['RG', 'Imputato', 'Reato', 'Origine', 'Fase', 'Detenuto', 'Prossima attività', 'Attività', ''].map(function (x) { return h('th', null, x); }))),
           h('tbody', null, elenco.map(function (f) {
             const ev = M.eventiDelFascicolo(stato, f.id);
             const prossima = ev.find(function (e) { return e.data >= oggi && e.stato !== 'provvisorio'; });
@@ -1227,12 +1236,13 @@
               h('td', null, f.imputato || '—'),
               h('td', null, f.reato || '—'),
               h('td', null, M.ORIGINI[f.origine]),
+              h('td', null, M.FASI[M.faseDi(f, stato)]),
               h('td', null, f.detenuto ? h('span', { class: 'pillola err' }, 'detenuto') : ''),
               h('td', null, prossima ? [D.fmtShort(prossima.data) + ' ' + prossima.inizio, ' ', h('button', { class: 'btn btn-piccolo', onClick: function () { ui.vista = 'calendario'; scegliGiorno(prossima.data); } }, 'Apri')] : '—'),
               h('td', null, ev.length),
               h('td', null, h('button', { class: 'btn btn-piccolo', onClick: function () { dialogoFascicolo(f.id); } }, 'Apri scheda')));
           }))))
-        : h('div', { class: 'vuota' }, stato.fascicoli.length ? 'Nessun fascicolo corrisponde alla ricerca.' : 'Non ci sono ancora fascicoli. Importali da Excel oppure creane uno.')
+        : h('div', { class: 'vuota' }, stato.fascicoli.length ? 'Nessun fascicolo corrisponde alla ricerca o alla fase scelta.' : 'Non ci sono ancora fascicoli. Importali da Excel oppure creane uno.')
     ];
   }
 

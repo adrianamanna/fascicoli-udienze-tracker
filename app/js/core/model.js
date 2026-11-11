@@ -27,6 +27,20 @@
     ALTRO: 'Altra o non indicata'
   };
 
+  // Fase del fascicolo: dove si trova nel percorso. Elenco ricavato dalla specifica (§3-bis, §7, §9, §9-bis): da confermare con il giudice.
+  const FASI = {
+    NUOVO: 'Nuovo, da inquadrare',
+    PREDIB: 'Predibattimento',
+    INCAMERAMENTO: 'In attesa di incameramento',
+    ISTRUTTORIA: 'Istruttoria',
+    DISCUSSIONE: 'Discussione',
+    RISERVA: 'In riserva',
+    RITI: 'Rinvio per riti o trattative',
+    MAP: 'Messa alla prova (sospeso)',
+    ESECUZIONE: 'Esecuzione',
+    CHIUSO: 'Chiuso'
+  };
+
   const STATI = {
     ufficiale: 'Ufficiale',
     provvisorio: 'Provvisorio (appunto personale)'
@@ -34,6 +48,7 @@
 
   const model = {
     TIPI: TIPI,
+    FASI: FASI,
     ORIGINI: ORIGINI,
     STATI: STATI,
     clock: function () {
@@ -121,7 +136,48 @@
     const err = [];
     if (!normRg(d.rg) && !String(d.imputato || '').trim()) err.push('Indica almeno il numero di ruolo o il nome dell\'imputato.');
     if (d.origine && !ORIGINI[d.origine]) err.push('Origine non valida.');
+    if (d.fase && !FASI[d.fase]) err.push('Fase non valida.');
     return err;
+  };
+
+  /** Fase del fascicolo. Se non è stata indicata, si ricava dai segni che ci sono già (flag, attività). */
+  model.faseDi = function (f, state) {
+    if (f.fase && FASI[f.fase]) return f.fase;
+    if (f.predibDaFissare) return 'PREDIB';
+    if (f.incameramentoDaFissare) return 'INCAMERAMENTO';
+    if (state) {
+      const ev = model.eventiDelFascicolo(state, f.id);
+      if (ev.length) {
+        // Suggerimento: la prossima attività ufficiale in calendario, altrimenti l'ultima.
+        const oggi = D.today();
+        const ufficiali = ev.filter(function (e) {
+          return e.stato !== 'provvisorio';
+        });
+        const riferimento = ufficiali.find(function (e) {
+          return e.data >= oggi;
+        }) || ufficiali[ufficiali.length - 1];
+        const t = riferimento && riferimento.tipo;
+        if (t && FASI[t]) return t;
+        if (t === 'PERITO') return 'ISTRUTTORIA';
+        if (t === 'REPLICHE') return 'DISCUSSIONE';
+      }
+    }
+    return 'NUOVO';
+  };
+
+  /** Elenco filtrato per testo (RG, imputato, reato) e per fase. */
+  model.filtraFascicoli = function (state, opz) {
+    const q = String((opz && opz.testo) || '').trim().toLowerCase();
+    const fase = (opz && opz.fase) || '';
+    return state.fascicoli
+      .filter(function (f) {
+        if (q && (f.rg + ' ' + f.imputato + ' ' + (f.reato || '')).toLowerCase().indexOf(q) < 0) return false;
+        if (fase && model.faseDi(f, state) !== fase) return false;
+        return true;
+      })
+      .sort(function (a, b) {
+        return (a.rg || '\uffff') < (b.rg || '\uffff') ? -1 : 1;
+      });
   };
 
   model.addFascicolo = function (state, d) {
@@ -143,6 +199,7 @@
       predibDaFissare: !!d.predibDaFissare,
       dataProvvedimento: D.isValidYmd(d.dataProvvedimento) ? d.dataProvvedimento : '',
       incameramentoDaFissare: !!d.incameramentoDaFissare,
+      fase: d.fase && FASI[d.fase] ? d.fase : '',
       note: String(d.note || '').trim()
     };
     state.fascicoli.push(f);
@@ -174,7 +231,9 @@
     f.dataProvvedimento = D.isValidYmd(nuovo.dataProvvedimento) ? nuovo.dataProvvedimento : '';
     f.incameramentoDaFissare = !!nuovo.incameramentoDaFissare;
     f.note = String(nuovo.note || '').trim();
-    log(state, 'modifica', 'fascicolo', f.id, (f.rg || '(senza RG)') + ' ' + f.imputato);
+    const faseVecchia = f.fase || '';
+    f.fase = nuovo.fase && FASI[nuovo.fase] ? nuovo.fase : '';
+    log(state, 'modifica', 'fascicolo', f.id, (f.rg || '(senza RG)') + ' ' + f.imputato + (faseVecchia !== f.fase ? ' · fase: ' + (FASI[faseVecchia] || 'non indicata') + ' → ' + (FASI[f.fase] || 'non indicata') : ''));
     return { ok: true, valore: f };
   };
 

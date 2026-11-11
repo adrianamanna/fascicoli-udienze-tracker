@@ -52,6 +52,9 @@ Tutti i calcoli sono **deterministici**: stessi dati, stesso risultato, nessuna 
 
 | Cod. | Regola | Valore attuale | Fonte | Stato | Dove | Modificabile |
 |---|---|---|---|---|---|---|
+| FAS-01 | Ogni fascicolo ha una **fase**: Nuovo da inquadrare, Predibattimento, In attesa di incameramento, Istruttoria, Discussione, In riserva, Rinvio per riti o trattative, Messa alla prova (sospeso), Esecuzione, Chiuso. L'elenco viene dalla tabella degli stati della specifica (§3-bis) e dai flussi dei §7-§9-bis. | | Mia ipotesi | **Da confermare** | model.js `FASI` | Solo nel codice |
+| FAS-02 | Se la fase non è indicata, si **ricava**: prima dai flag "da fissare in predibattimento" e "da incamerare"; poi dalla prossima attività ufficiale in calendario (o dall'ultima, se sono tutte passate), secondo il suo tipo; altrimenti "Nuovo da inquadrare". La fase indicata a mano vince sempre. | | Mia ipotesi | Da confermare | model.js `faseDi` | No |
+| FAS-03 | Ogni cambio di fase è registrato nello storico. L'app non cambia mai la fase da sola. | | Mia ipotesi | Da confermare | model.js `updateFascicolo` | No |
 | DAT-01 | Per creare un fascicolo serve almeno il numero di ruolo (RG) o il nome dell'imputato. | | Mia ipotesi | Da confermare | model.js `validateFascicolo` | No |
 | DAT-02 | Il numero di ruolo è **unico**: due RG sono uguali se coincidono ignorando spazi e maiuscole. | | Mia ipotesi | Da confermare | model.js `findFascicoloByRg` | No |
 | DAT-03 | I dati restano **solo sul dispositivo** (archivio del browser), senza cloud né invii a server. Il programma blocca ogni connessione di rete. | | Giudice | Confermato | storage.js; index.html | No |

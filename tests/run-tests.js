@@ -880,6 +880,32 @@ function fileFinto(testoIniziale, rompi) {
   return f;
 }
 
+test('Fase del fascicolo: indicata, ricavata o non valida', function () {
+  const s = GC.model.newState();
+  const a = GC.model.addFascicolo(s, { rg: '1/2026', imputato: 'A', origine: 'GUP' }).valore;
+  assert.strictEqual(GC.model.faseDi(a, s), 'NUOVO');
+  GC.model.addEvento(s, { fascicoloId: a.id, data: '2099-01-10', inizio: '09:00', durata: 90, tipo: 'INCAMERAMENTO' });
+  assert.strictEqual(GC.model.faseDi(a, s), 'INCAMERAMENTO', 'ricavata dalla prossima attività');
+  assert.ok(GC.model.updateFascicolo(s, a.id, { fase: 'RISERVA' }).ok);
+  assert.strictEqual(GC.model.faseDi(a, s), 'RISERVA', 'la fase indicata vince');
+  assert.strictEqual(GC.model.updateFascicolo(s, a.id, { fase: 'INVENTATA' }).ok, false);
+  assert.ok(s.storico[s.storico.length - 1].dettaglio.indexOf('fase') >= 0, 'il cambio di fase finisce nello storico');
+  const b = GC.model.addFascicolo(s, { rg: '2/2026', imputato: 'B', predibDaFissare: true }).valore;
+  assert.strictEqual(GC.model.faseDi(b, s), 'PREDIB', 'dal flag predibattimento');
+});
+
+test('Elenco fascicoli: filtro per testo e per fase', function () {
+  const s = GC.model.newState();
+  GC.model.addFascicolo(s, { rg: '10/2026', imputato: 'Rossi', fase: 'ISTRUTTORIA' });
+  GC.model.addFascicolo(s, { rg: '11/2026', imputato: 'Bianchi', fase: 'RISERVA', reato: 'furto' });
+  GC.model.addFascicolo(s, { rg: '12/2026', imputato: 'Verdi', fase: 'RISERVA' });
+  assert.strictEqual(GC.model.filtraFascicoli(s, {}).length, 3);
+  assert.strictEqual(GC.model.filtraFascicoli(s, { fase: 'RISERVA' }).length, 2);
+  assert.strictEqual(GC.model.filtraFascicoli(s, { testo: 'furto' }).length, 1);
+  assert.strictEqual(GC.model.filtraFascicoli(s, { testo: 'rossi', fase: 'RISERVA' }).length, 0);
+  assert.deepStrictEqual(GC.model.filtraFascicoli(s, {}).map(function (f) { return f.rg; }), ['10/2026', '11/2026', '12/2026']);
+});
+
 test('File dei dati: scrittura e rilettura senza perdite', async function () {
   const s = statoDemo();
   const f = fileFinto('');
