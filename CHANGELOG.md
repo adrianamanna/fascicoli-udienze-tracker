@@ -4,6 +4,7 @@
 - **Fase del fascicolo**: ogni fascicolo ha una fase (predibattimento, in attesa di incameramento, istruttoria, discussione, in riserva, riti o trattative, messa alla prova, esecuzione, chiuso). Si sceglie nella scheda; se non è indicata, l'app la ricava dai segni che ci sono già (da fissare in predibattimento, da incamerare, prossima attività).
 - Scheda **Fascicoli**: colonna "Fase" e filtro per fase con il numero di fascicoli per ciascuna.
 - Il cambio di fase è registrato nello storico.
+- **Nuovo aspetto**: tema sempre chiaro (niente più sfondo scuro), intestazione fissa in alto, schede bianche con ombre leggere, pulsanti, tabelle e messaggi ridisegnati. Lo stato del salvataggio è una piccola etichetta in basso a destra.
 
 ## 0.5.0 — novembre 2026
 - **File dei dati**: in "Dati e backup" si sceglie un file (Chrome o Edge) dove l'app salva ogni modifica, oltre alla copia nel browser. Per passare a una nuova versione dell'app basta aprire lo stesso file: niente più backup e ripristino a mano.

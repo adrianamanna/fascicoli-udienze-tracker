@@ -1236,7 +1236,7 @@
               h('td', null, f.imputato || '—'),
               h('td', null, f.reato || '—'),
               h('td', null, M.ORIGINI[f.origine]),
-              h('td', null, M.FASI[M.faseDi(f, stato)]),
+              h('td', null, h('span', { class: 'pillola' }, M.FASI[M.faseDi(f, stato)])),
               h('td', null, f.detenuto ? h('span', { class: 'pillola err' }, 'detenuto') : ''),
               h('td', null, prossima ? [D.fmtShort(prossima.data) + ' ' + prossima.inizio, ' ', h('button', { class: 'btn btn-piccolo', onClick: function () { ui.vista = 'calendario'; scegliGiorno(prossima.data); } }, 'Apri')] : '—'),
               h('td', null, ev.length),
