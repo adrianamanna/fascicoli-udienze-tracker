@@ -1,4 +1,4 @@
-# Regole usate dal programma "Calendario udienze" (versione 0.4)
+# Regole usate dal programma "Fascicoli Udienze Tracker" (versione 0.4)
 
 Questo documento elenca **ogni regola che il programma applica davvero** quando calcola, controlla o propone qualcosa. Serve a correggerle via via: dimmi il **codice** della regola (per esempio PRE-05) e il valore o il comportamento giusto, e aggiorno programma e documento insieme.
 

@@ -158,7 +158,7 @@
     else corpo = vistaDati();
 
     const barra = h('header', { class: 'barra' },
-      h('div', { class: 'marchio' }, 'Calendario udienze'),
+      h('div', { class: 'marchio' }, 'Fascicoli Udienze Tracker'),
       h('nav', { class: 'navigazione', 'aria-label': 'Sezioni' },
         VISTE.map(function (v) {
           return h('button', { class: 'scheda', 'aria-current': ui.vista === v[0] ? 'page' : null, onClick: function () { vaiA(v[0]); } }, v[1]);
@@ -1681,7 +1681,7 @@
       h('div', { class: 'azioni' }, h('button', { class: 'btn btn-primario', onClick: function () {
         stato.meta.ultimoBackup = M.clock();
         const testo = S.exportText(stato);
-        scarica('calendario-giudice-backup-' + D.today() + '.json', testo, 'application/json');
+        scarica('fascicoli-udienze-tracker-backup-' + D.today() + '.json', testo, 'application/json');
         ui.messaggio = { tipo: 'ok', testo: 'Backup salvato nella cartella dei download.' };
         aggiorna();
       } }, 'Scarica il backup')),

@@ -1,7 +1,7 @@
 {
-  "name": "calendario-udienze-giudice",
-  "version": "0.4.0",
-  "description": "Calendario delle udienze del giudice penale: app locale, senza server, con calcoli deterministici.",
+  "name": "fascicoli-udienze-tracker",
+  "version": "0.4.1",
+  "description": "Fascicoli Udienze Tracker: calendario delle udienze e dei fascicoli del giudice penale. App locale, senza server, con calcoli deterministici.",
   "private": true,
   "scripts": {
     "test": "node tests/run-tests.js"

@@ -847,6 +847,16 @@ test('Backup: esportazione e importazione senza perdite', async function () {
   assert.strictEqual(GC.storage.parseBackup(JSON.stringify({ app: 'altra' })).ok, false);
 });
 
+test('Backup creato con il nome vecchio (calendario-giudice, fino alla 0.4.0) ancora leggibile', function () {
+  const s = statoDemo();
+  const vecchio = JSON.parse(GC.storage.exportText(s));
+  assert.strictEqual(vecchio.app, 'fascicoli-udienze-tracker');
+  vecchio.app = 'calendario-giudice';
+  const r = GC.storage.parseBackup(JSON.stringify(vecchio));
+  assert.ok(r.ok);
+  assert.deepStrictEqual(r.stato, s);
+});
+
 test('Stato normalizzato: id sempre avanti rispetto a quelli presenti', function () {
   const raw = { fascicoli: [{ id: 'F00007', rg: 'x' }], eventi: [{ id: 'E00012' }], meta: { prossimoId: 3 } };
   const s = GC.model.normalizeState(raw);

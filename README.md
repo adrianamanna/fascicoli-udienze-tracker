@@ -1,4 +1,4 @@
-# Calendario udienze del giudice
+# Fascicoli Udienze Tracker
 
 App per organizzare il calendario delle udienze di un giudice penale: giornata con vuoti da riempire, importazione del ruolo da Excel, predibattimento e incameramento con i loro termini.
 
@@ -9,10 +9,10 @@ App per organizzare il calendario delle udienze di un giudice penale: giornata c
 ## Scaricare l'app
 
 1. Apri la pagina **Releases** di questo repository (colonna di destra, oppure la scheda *Code* > *Releases*).
-2. Nell'ultima versione, sotto **Assets**, scarica il file `calendario-giudice-vX.Y.Z.zip`.
+2. Nell'ultima versione, sotto **Assets**, scarica il file `fascicoli-udienze-tracker-vX.Y.Z.zip`.
 3. Estrai lo zip e fai doppio clic su `index.html`.
 
-Il repository è **privato**: per scaricare serve un account GitHub invitato al repository. Chi non ha accesso può ricevere lo zip da chi ce l'ha.
+Il repository è **pubblico**: chiunque può scaricare l'app e leggere il codice. Per questo non vi devono mai finire dati reali (vedi "Privacy e dati").
 
 ## Primo avvio
 
@@ -47,7 +47,7 @@ docs/                 specifica delle regole e regole realmente implementate
 
 ## Le regole del programma
 
-- `docs/specifica_calendario_udienze_giudice_penale.md`: la specifica completa, con tutto ciò che si vuole ottenere.
+- `docs/specifica_fascicoli_udienze_tracker.md`: la specifica completa, con tutto ciò che si vuole ottenere.
 - `docs/regole_implementate_app.md`: **le regole che il programma applica davvero**, con codice, valore, fonte e stato. È il documento da correggere quando una regola non è giusta.
 
 ## Sviluppo

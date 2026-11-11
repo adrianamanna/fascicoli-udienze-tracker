@@ -3,6 +3,7 @@
 
 # Backup dell'app (contengono i dati dei fascicoli)
 *backup*.json
+fascicoli-udienze-tracker-backup-*.json
 calendario-giudice-backup-*.json
 
 # File Excel e CSV: si caricano solo quelli di prova elencati qui sotto

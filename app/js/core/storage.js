@@ -3,23 +3,30 @@
   'use strict';
   const GC = (root.GC = root.GC || {});
 
-  const DB_NOME = 'calendario-giudice';
+  const DB_NOME = 'fascicoli-udienze-tracker';
   const NEGOZIO = 'kv';
   const CHIAVE = 'stato';
-  const APP_ID = 'calendario-giudice';
+  const APP_ID = 'fascicoli-udienze-tracker';
+  // Nome usato fino alla versione 0.4.0: si leggono ancora i dati e i backup creati con quel nome.
+  const NOME_VECCHIO = 'calendario-giudice';
 
   let backend = 'nessuno';
 
-  function apriDb() {
+  /** Apre il database. Con soloEsistente non crea nulla: se il database non c'era, dà errore. */
+  function apriDb(nome, soloEsistente) {
     return new Promise(function (resolve, reject) {
       if (typeof indexedDB === 'undefined') return reject(new Error('IndexedDB non disponibile'));
       let rich;
       try {
-        rich = indexedDB.open(DB_NOME, 1);
+        rich = indexedDB.open(nome || DB_NOME, 1);
       } catch (e) {
         return reject(e);
       }
       rich.onupgradeneeded = function () {
+        if (soloEsistente) {
+          rich.transaction.abort();
+          return;
+        }
         rich.result.createObjectStore(NEGOZIO);
       };
       rich.onsuccess = function () {
@@ -34,13 +41,34 @@
     });
   }
 
-  function leggiLs() {
+  function leggiLs(nome) {
     try {
-      const t = typeof localStorage !== 'undefined' ? localStorage.getItem(DB_NOME) : null;
+      const t = typeof localStorage !== 'undefined' ? localStorage.getItem(nome || DB_NOME) : null;
       return t ? JSON.parse(t) : null;
     } catch (e) {
       return null;
     }
+  }
+
+  /** Dati salvati con il nome vecchio (fino alla 0.4.0), se ci sono: vengono copiati al primo salvataggio. */
+  async function leggiVecchi() {
+    try {
+      const db = await apriDb(NOME_VECCHIO, true);
+      const v = await new Promise(function (resolve, reject) {
+        const rq = db.transaction(NEGOZIO, 'readonly').objectStore(NEGOZIO).get(CHIAVE);
+        rq.onsuccess = function () {
+          resolve(rq.result || null);
+        };
+        rq.onerror = function () {
+          reject(rq.error);
+        };
+      });
+      db.close();
+      if (v) return v;
+    } catch (e) {
+      /* nessun database con il nome vecchio */
+    }
+    return leggiLs(NOME_VECCHIO);
   }
 
   /** Carica lo stato salvato (oggetto grezzo) oppure null. */
@@ -59,11 +87,10 @@
       db.close();
       backend = 'indexeddb';
       if (v) return v;
-      const ls = leggiLs();
-      return ls || null;
+      return leggiLs() || (await leggiVecchi()) || null;
     } catch (e) {
       backend = 'localstorage';
-      return leggiLs();
+      return leggiLs() || leggiLs(NOME_VECCHIO);
     }
   }
 
@@ -132,7 +159,7 @@
     } catch (e) {
       return { ok: false, errore: 'Il file non è un backup valido (JSON non leggibile).' };
     }
-    if (!o || o.app !== APP_ID || !o.stato) return { ok: false, errore: "Il file non è un backup di questa app." };
+    if (!o || (o.app !== APP_ID && o.app !== NOME_VECCHIO) || !o.stato) return { ok: false, errore: "Il file non è un backup di questa app." };
     if (o.versione > 1) return { ok: false, errore: 'Il backup è stato creato da una versione più recente dell\'app.' };
     const stato = GC.model.normalizeState(o.stato);
     return { ok: true, stato: stato, esportato: o.esportato || null };

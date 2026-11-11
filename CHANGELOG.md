@@ -1,5 +1,11 @@
 # Novità per versione
 
+## 0.4.1 — novembre 2026
+- **Nome unico**: l'app, la repo, lo zip, i backup e i documenti si chiamano ora "Fascicoli Udienze Tracker" (`fascicoli-udienze-tracker`). Prima c'erano tre nomi diversi.
+- **Compatibilità**: i dati già salvati nel browser e i backup creati con il vecchio nome (`calendario-giudice`) si leggono ancora.
+- Il documento di specifica diventa `docs/specifica_fascicoli_udienze_tracker.md`.
+- README: il repository è pubblico.
+
 ## 0.4.0 — novembre 2026
 - **Incameramento**: nuova scheda. Uno slot unico di 90 minuti per tutti i fascicoli di quella data, con data minima per fascicolo (20 giorni dal decreto o dal provvedimento, 30 dalla notifica per l'immediato), cadenza per origine (GUP ogni 3 mesi, predibattimento ogni 6), chiusura delle liste e stato di ogni slot.
 - **Predibattimento**: massimo 30 fascicoli per udienza (circa 5 ore), slot da 10 minuti uno dopo l'altro; piano che divide molti fascicoli in gruppi da 30, a 5 settimane l'uno dall'altro.

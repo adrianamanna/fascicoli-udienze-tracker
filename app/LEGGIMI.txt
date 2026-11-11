@@ -1,4 +1,4 @@
-CALENDARIO UDIENZE DEL GIUDICE - versione 0.4 (Fasi 1-3: calendario, ruolo, predibattimento, incameramento)
+FASCICOLI UDIENZE TRACKER - versione 0.4 (Fasi 1-3: calendario, ruolo, predibattimento, incameramento)
 =====================================================
 
 COS'È
@@ -12,7 +12,7 @@ L'app è stata provata con il motore di Chrome ed Edge. Safari e Firefox non son
 verificati: se li usi, fai backup frequenti.
 
 COME SI APRE
-1. Copia la cartella "calendario-giudice" dove vuoi sul computer (per esempio in Documenti).
+1. Copia la cartella "fascicoli-udienze-tracker" dove vuoi sul computer (per esempio in Documenti).
    Se hai ricevuto il file .zip, estrailo prima (tasto destro > Estrai tutto, su Windows;
    doppio clic su macOS).
 2. Fai doppio clic sul file "index.html". Si apre nel browser.

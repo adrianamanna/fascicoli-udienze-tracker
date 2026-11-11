@@ -30,12 +30,12 @@ jobs:
           fi
       - name: Crea lo zip dell'app
         run: |
-          mkdir -p dist/calendario-giudice
-          cp -r app/. dist/calendario-giudice/
+          mkdir -p dist/fascicoli-udienze-tracker
+          cp -r app/. dist/fascicoli-udienze-tracker/
           cd dist
-          zip -r "../calendario-giudice-${GITHUB_REF_NAME}.zip" calendario-giudice
+          zip -r "../fascicoli-udienze-tracker-${GITHUB_REF_NAME}.zip" fascicoli-udienze-tracker
       - name: Pubblica la release
         uses: softprops/action-gh-release@v2
         with:
-          files: calendario-giudice-${{ github.ref_name }}.zip
+          files: fascicoli-udienze-tracker-${{ github.ref_name }}.zip
           generate_release_notes: true
