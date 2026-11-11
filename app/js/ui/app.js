@@ -6,6 +6,7 @@
   const C = GC.calendar;
   const M = GC.model;
   const S = GC.storage;
+  const F = GC.fileDati;
   const I = GC.importer;
   const X = GC.xlsx;
 
@@ -17,6 +18,8 @@
     giorno: '',
     cercaFasc: '',
     salvataggio: { testo: '', errore: false },
+    // File dei dati scelto dall'utente: stato = nessuno | collegato | da-riaprire | nonSupportato
+    file: { handle: null, stato: 'nessuno', errore: '' },
     imp: null,
     impErrore: '',
     annoFeste: new Date().getFullYear(),
@@ -107,14 +110,123 @@
   }
 
   async function salvaOra() {
+    stato.meta.salvato = M.clock();
+    const n = new Date();
+    const ora = D.pad(n.getHours()) + ':' + D.pad(n.getMinutes());
+    let erroreBrowser = '';
     try {
       await S.save(stato);
-      const n = new Date();
-      ui.salvataggio = { testo: 'Salvato su questo dispositivo alle ' + D.pad(n.getHours()) + ':' + D.pad(n.getMinutes()), errore: false };
     } catch (e) {
-      ui.salvataggio = { testo: e.message, errore: true };
+      erroreBrowser = e.message;
+    }
+    if (ui.file.handle && ui.file.stato === 'collegato') {
+      try {
+        await F.scrivi(ui.file.handle, stato);
+        ui.salvataggio = { testo: 'Salvato nel file "' + ui.file.handle.name + '" alle ' + ora, errore: false };
+      } catch (e) {
+        ui.file.stato = 'da-riaprire';
+        ui.file.errore = 'Il file non è stato aggiornato (' + (e && e.message ? e.message : e) + ').';
+        ui.salvataggio = { testo: ui.file.errore + ' I dati sono salvati solo nel browser.', errore: true };
+        render();
+      }
+    } else if (erroreBrowser) {
+      ui.salvataggio = { testo: erroreBrowser, errore: true };
+    } else if (ui.file.stato === 'da-riaprire') {
+      ui.salvataggio = { testo: 'Salvato solo nel browser: riapri il file dei dati', errore: true };
+    } else {
+      ui.salvataggio = { testo: 'Salvato su questo dispositivo alle ' + ora, errore: false };
     }
     aggiornaStatoSalvataggio();
+  }
+
+  /* ---------- file dei dati ---------- */
+
+  /** Legge il file scelto, decide quali dati tenere e lo collega. Restituisce true se il file è collegato. */
+  async function usaFile(handle, primoCollegamento) {
+    const r = await F.leggi(handle);
+    if (!r.ok) {
+      ui.messaggio = { tipo: 'errore', testo: 'Il file scelto non è un file dei dati di questa app. ' + r.errore };
+      return false;
+    }
+    const daFile = r.vuoto ? null : r.stato;
+    let fonte = F.scegliFonte(stato, daFile);
+    if (primoCollegamento && F.haDati(daFile) && F.haDati(stato)) {
+      if (!window.confirm('Il file contiene già dei dati (salvati il ' + fmtDataOra(daFile.meta.salvato || r.esportato) + '). Sostituire i dati attuali di questa app con quelli del file?')) return false;
+      fonte = 'file';
+    } else if (fonte === 'chiedi') {
+      fonte = window.confirm('Nel browser ci sono modifiche più recenti di quelle nel file (browser: ' + fmtDataOra(stato.meta.salvato) + ', file: ' + fmtDataOra(daFile.meta.salvato) + ').\n\nOK = tieni i dati del browser e aggiorna il file.\nAnnulla = usa i dati del file (le modifiche più recenti del browser andranno perse).') ? 'locale' : 'file';
+    }
+    if (fonte === 'file') stato = M.normalizeState(daFile);
+    ui.file = { handle: handle, stato: 'collegato', errore: '' };
+    try {
+      await S.salvaCollegamento(handle);
+    } catch (e) {
+      /* il collegamento vale solo per questa sessione */
+    }
+    await salvaOra();
+    return true;
+  }
+
+  /** Scelta del file da parte dell'utente (serve un clic). nuovo = crea; altrimenti apre uno già esistente. */
+  async function sceltaFile(nuovo) {
+    try {
+      const handle = nuovo ? await F.scegliNuovo() : await F.scegliEsistente();
+      if ((await F.permesso(handle, true)) !== 'granted') {
+        ui.messaggio = { tipo: 'errore', testo: 'Senza il permesso di scrivere nel file non posso collegarlo.' };
+      } else if (await usaFile(handle, true)) {
+        ui.messaggio = { tipo: 'ok', testo: 'File collegato: "' + handle.name + '". Da ora ogni modifica viene salvata anche lì.' };
+      }
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      ui.messaggio = { tipo: 'errore', testo: 'Non è stato possibile usare il file: ' + (e && e.message ? e.message : e) };
+    }
+    render();
+  }
+
+  /** Riapre il file collegato nelle sessioni precedenti. */
+  async function riapriFile() {
+    try {
+      await usaFile(ui.file.handle, false);
+    } catch (e) {
+      ui.file.stato = 'da-riaprire';
+      ui.file.errore = 'Il file non si può leggere: è stato spostato o cancellato?';
+    }
+  }
+
+  async function riapriDaClic() {
+    try {
+      if ((await F.permesso(ui.file.handle, true)) !== 'granted') {
+        ui.messaggio = { tipo: 'errore', testo: 'Il permesso di scrivere nel file non è stato dato.' };
+        return render();
+      }
+      await riapriFile();
+      if (ui.file.stato === 'collegato') ui.messaggio = { tipo: 'ok', testo: 'File dei dati riaperto.' };
+    } catch (e) {
+      ui.messaggio = { tipo: 'errore', testo: 'Non è stato possibile riaprire il file: ' + (e && e.message ? e.message : e) };
+    }
+    render();
+  }
+
+  async function scollegaFile() {
+    ui.file = { handle: null, stato: 'nessuno', errore: '' };
+    await S.eliminaCollegamento();
+    ui.messaggio = { tipo: 'ok', testo: 'File scollegato. Il file resta dov\'è; i dati continuano a essere salvati nel browser.' };
+    render();
+  }
+
+  async function collegaAvvio() {
+    if (!F.supportato()) {
+      ui.file = { handle: null, stato: 'nonSupportato', errore: '' };
+      return;
+    }
+    const handle = await S.caricaCollegamento();
+    if (!handle) return;
+    ui.file = { handle: handle, stato: 'da-riaprire', errore: '' };
+    try {
+      if ((await F.permesso(handle, false)) === 'granted') await riapriFile();
+    } catch (e) {
+      ui.file.errore = 'Il file non si può leggere: è stato spostato o cancellato?';
+    }
   }
 
   /** Dopo ogni modifica: salva e ridisegna. */
@@ -183,10 +295,19 @@
       out.push(h('div', { class: 'messaggio info' }, 'Prima di iniziare indica i giorni in cui hai udienza. ',
         h('button', { class: 'btn btn-piccolo', onClick: function () { vaiA('impostazioni'); } }, 'Vai alle impostazioni')));
     }
+    if (ui.file.stato === 'da-riaprire') {
+      out.push(h('div', { class: 'messaggio avviso' },
+        'Il file dei dati "' + (ui.file.handle && ui.file.handle.name ? ui.file.handle.name : '') + '" non è collegato in questa sessione: finché non lo riapri, i dati sono salvati solo nel browser. ' + (ui.file.errore || ''),
+        h('button', { class: 'btn btn-piccolo', onClick: riapriDaClic }, 'Riapri il file dei dati')));
+    } else if (ui.file.stato === 'nessuno') {
+      out.push(h('div', { class: 'messaggio info' },
+        'Per non perdere i dati, scegli un file dove salvarli: l\'app lo aggiorna a ogni modifica. ',
+        h('button', { class: 'btn btn-piccolo', onClick: function () { vaiA('dati'); } }, 'Scegli il file dei dati')));
+    }
     const ult = stato.meta.ultimoBackup;
     const giorni = ult ? Math.floor((Date.now() - new Date(ult).getTime()) / 86400000) : null;
     const limite = stato.parametri.backupPromemoriaGiorni;
-    if ((stato.eventi.length > 0 || stato.fascicoli.length > 0) && (ult === null || giorni >= limite)) {
+    if (ui.file.stato !== 'collegato' && (stato.eventi.length > 0 || stato.fascicoli.length > 0) && (ult === null || giorni >= limite)) {
       out.push(h('div', { class: 'messaggio avviso' },
         ult === null ? 'Non hai ancora fatto un backup dei dati. ' : 'L\'ultimo backup risale a ' + giorni + ' giorni fa. ',
         'I dati sono solo su questo dispositivo. ',
@@ -1657,12 +1778,43 @@
 
   /* ---------- dati e backup ---------- */
 
+  function sezioneFile() {
+    const f = ui.file;
+    const nome = f.handle && f.handle.name ? f.handle.name : '';
+    const sez = h('section', { class: 'sezione' }, h('h2', null, 'File dei dati'));
+    if (f.stato === 'nonSupportato') {
+      sez.append(h('p', { class: 'aiuto' }, 'Questo browser non permette di salvare in un file scelto da te. Usa Chrome o Edge, oppure fai i backup a mano (qui sotto).'));
+    } else if (f.stato === 'collegato') {
+      sez.append(
+        h('p', { class: 'aiuto' }, 'Ogni modifica viene salvata nel file "' + nome + '" (e in una copia nel browser). Puoi copiarlo, tenerlo in una cartella sincronizzata o portarlo su un altro computer.'),
+        h('p', { class: 'aiuto' }, 'Quando passi a una nuova versione dell\'app, apri la nuova versione e scegli lo stesso file con "Apri un file esistente": ritrovi tutti i dati.'),
+        h('div', { class: 'azioni' },
+          h('button', { class: 'btn', onClick: function () { sceltaFile(false); } }, 'Cambia file'),
+          h('button', { class: 'btn', onClick: scollegaFile }, 'Scollega il file')));
+    } else if (f.stato === 'da-riaprire') {
+      sez.append(
+        h('p', { class: 'aiuto' }, 'Il file "' + nome + '" era collegato, ma in questa sessione il browser chiede di nuovo il permesso. ' + (f.errore || '')),
+        h('div', { class: 'azioni' },
+          h('button', { class: 'btn btn-primario', onClick: riapriDaClic }, 'Riapri il file dei dati'),
+          h('button', { class: 'btn', onClick: function () { sceltaFile(false); } }, 'Scegli un altro file'),
+          h('button', { class: 'btn', onClick: scollegaFile }, 'Scollega')));
+    } else {
+      sez.append(
+        h('p', { class: 'aiuto' }, 'Scegli un file dove salvare i dati: l\'app lo aggiorna a ogni modifica. Alla prima volta usa "Crea un nuovo file"; per riprendere i dati dopo un aggiornamento dell\'app, o su un altro computer, usa "Apri un file esistente".'),
+        h('div', { class: 'azioni' },
+          h('button', { class: 'btn btn-primario', onClick: function () { sceltaFile(true); } }, 'Crea un nuovo file dei dati'),
+          h('button', { class: 'btn', onClick: function () { sceltaFile(false); } }, 'Apri un file esistente')));
+    }
+    return sez;
+  }
+
   function vistaDati() {
     const out = [
       h('h1', { class: 'titolo-pagina' }, 'Dati e backup'),
-      h('p', { class: 'sottotitolo' }, 'I dati restano solo su questo dispositivo, nel browser: non vengono inviati a nessun server. Per non perderli, fai un backup di tanto in tanto e conservalo in un luogo sicuro.')
+      h('p', { class: 'sottotitolo' }, 'I dati restano solo su questo dispositivo: non vengono inviati a nessun server. Per non perderli, collega un file dei dati e fai un backup di tanto in tanto, conservandolo in un luogo sicuro.')
     ];
     if (ui.messaggio) out.push(h('div', { class: 'messaggio ' + ui.messaggio.tipo, role: 'status' }, ui.messaggio.testo));
+    out.push(sezioneFile());
     const ult = stato.meta.ultimoBackup;
     const fileBackup = h('input', { type: 'file', accept: '.json,application/json', onChange: async function (e) {
       const f = e.target.files && e.target.files[0];
@@ -1704,7 +1856,7 @@
 
     out.push(h('section', { class: 'sezione' },
       h('h2', null, 'Cancella tutti i dati'),
-      h('p', { class: 'aiuto' }, 'Elimina fascicoli, attività, importazioni e impostazioni da questo dispositivo. Fai prima un backup.'),
+      h('p', { class: 'aiuto' }, 'Elimina fascicoli, attività, importazioni e impostazioni da questo dispositivo' + (ui.file.stato === 'collegato' ? ' e svuota anche il file dei dati collegato' : '') + '. Fai prima un backup.'),
       h('button', { class: 'btn btn-pericolo', onClick: async function () {
         const r = window.prompt('Per confermare scrivi CANCELLA (in maiuscolo).');
         if (r !== 'CANCELLA') return;
@@ -1726,6 +1878,11 @@
     } catch (e) {
       stato = M.newState();
       ui.salvataggio = { testo: 'Impossibile leggere i dati salvati: ' + e.message, errore: true };
+    }
+    try {
+      await collegaAvvio();
+    } catch (e) {
+      ui.file = { handle: null, stato: 'nessuno', errore: '' };
     }
     ui.giorno = D.today();
     const p = D.parts(ui.giorno);

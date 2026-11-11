@@ -5,7 +5,7 @@ const path = require('path');
 const assert = require('assert');
 
 const base = path.join(__dirname, '..', 'app', 'js', 'core');
-['versione', 'dates', 'params', 'calendar', 'model', 'predib', 'incamera', 'storage', 'xlsx', 'importer'].forEach(function (m) {
+['versione', 'dates', 'params', 'calendar', 'model', 'predib', 'incamera', 'storage', 'filedati', 'xlsx', 'importer'].forEach(function (m) {
   require(path.join(base, m + '.js'));
 });
 const GC = globalThis.GC;
@@ -862,6 +862,70 @@ test('Stato normalizzato: id sempre avanti rispetto a quelli presenti', function
   const s = GC.model.normalizeState(raw);
   assert.strictEqual(s.meta.prossimoId, 13);
   assert.deepStrictEqual(s.parametri, GC.params.defaults());
+});
+
+/* ---------- file dei dati (con un file finto, senza browser) ---------- */
+
+function fileFinto(testoIniziale, rompi) {
+  const f = { testo: testoIniziale || '', name: 'dati.json' };
+  f.getFile = async function () { return { text: async function () { return f.testo; } }; };
+  f.createWritable = async function () {
+    let buf = '';
+    return {
+      write: async function (t) { buf += t; if (rompi) throw new Error('disco pieno'); },
+      close: async function () { f.testo = buf; },
+      abort: async function () { /* il file originale non si tocca */ }
+    };
+  };
+  return f;
+}
+
+test('File dei dati: scrittura e rilettura senza perdite', async function () {
+  const s = statoDemo();
+  const f = fileFinto('');
+  await GC.fileDati.scrivi(f, s);
+  const r = await GC.fileDati.leggi(f);
+  assert.ok(r.ok);
+  assert.deepStrictEqual(r.stato, s);
+});
+
+test('File dei dati: file vuoto riconosciuto, file non valido rifiutato', async function () {
+  const vuoto = await GC.fileDati.leggi(fileFinto('  \n'));
+  assert.ok(vuoto.ok && vuoto.vuoto);
+  const rotto = await GC.fileDati.leggi(fileFinto('non json'));
+  assert.strictEqual(rotto.ok, false);
+  const altro = await GC.fileDati.leggi(fileFinto(JSON.stringify({ app: 'altra', stato: {} })));
+  assert.strictEqual(altro.ok, false);
+});
+
+test('File dei dati: se la scrittura fallisce, il contenuto precedente resta intatto', async function () {
+  const s = statoDemo();
+  const buono = fileFinto('');
+  await GC.fileDati.scrivi(buono, s);
+  const prima = buono.testo;
+  const guasto = fileFinto(prima, true);
+  await assert.rejects(function () { return GC.fileDati.scrivi(guasto, statoDemo()); }, /disco pieno/);
+  assert.strictEqual(guasto.testo, prima);
+});
+
+test('File dei dati: quale copia usare alla riapertura', function () {
+  const F = GC.fileDati;
+  function stato(salvato, conDati) {
+    const s = GC.model.newState();
+    s.meta.salvato = salvato;
+    if (conDati) GC.model.addFascicolo(s, { rg: '1/2026', imputato: 'Prova', origine: 'GUP' });
+    return s;
+  }
+  assert.strictEqual(F.scegliFonte(stato('2026-11-02T10:00:00Z', true), null), 'locale', 'file vuoto: si scrive il browser nel file');
+  assert.strictEqual(F.scegliFonte(stato('2026-11-02T10:00:00Z', true), stato('2026-11-01T10:00:00Z', false)), 'locale', 'file senza dati');
+  assert.strictEqual(F.scegliFonte(stato('', false), stato('2026-11-01T10:00:00Z', true)), 'file', 'browser vuoto: si usa il file');
+  assert.strictEqual(F.scegliFonte(stato('2026-11-01T10:00:00Z', true), stato('2026-11-02T10:00:00Z', true)), 'file', 'file più recente');
+  assert.strictEqual(F.scegliFonte(stato('2026-11-02T10:00:00Z', true), stato('2026-11-01T10:00:00Z', true)), 'chiedi', 'browser più recente: si chiede');
+  assert.strictEqual(F.scegliFonte(stato('2026-11-02T10:00:00Z', true), stato('2026-11-02T10:00:00Z', true)), 'file', 'stessa data');
+});
+
+test('File dei dati: nei browser senza supporto (Node) non è disponibile', function () {
+  assert.strictEqual(GC.fileDati.supportato(), false);
 });
 
 esegui();

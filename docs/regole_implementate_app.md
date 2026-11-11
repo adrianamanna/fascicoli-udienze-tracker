@@ -60,6 +60,9 @@ Tutti i calcoli sono **deterministici**: stessi dati, stesso risultato, nessuna 
 | DAT-06 | Cancellare tutti i dati richiede di scrivere la parola CANCELLA. | | Mia ipotesi | Da confermare | app.js `vistaDati` | No |
 | DAT-07 | Lo **storico** registra ogni modifica (cosa, quando); si conservano le ultime 5000 voci e se ne mostrano 200. | | Giudice (storico) | Da confermare i numeri | model.js `log` | No |
 | DAT-08 | Il nome con cui compari nel ruolo delle udienze (colonna Giudice) viene **ricordato**. | GIUDICE 1 | Giudice | Confermato | params `giudiceRuolo` | Sì |
+| DAT-09 | **File dei dati** (solo Chrome ed Edge): se scegli un file, a ogni modifica l'app lo riscrive per intero, oltre alla copia nel browser. Il file ha lo stesso formato del backup. La scrittura passa da un file temporaneo: se fallisce, il file precedente resta intatto. | | Giudice (dati solo sul dispositivo) | Da confermare | filedati.js; app.js `salvaOra` | Sì, Dati e backup |
+| DAT-10 | **Riapertura del file**: se il file ha dati e il browser no, si usa il file; se il file è più recente del browser (data `meta.salvato`), si usa il file; se il browser è più recente, l'app **chiede** quale copia tenere; se il file è vuoto, ci si scrive la copia del browser. Alla prima scelta di un file che ha già dati, l'app chiede conferma prima di sostituire i dati attuali. | | Mia ipotesi | Da confermare | filedati.js `scegliFonte`; app.js `usaFile` | No |
+| DAT-11 | Con un file collegato, il promemoria del backup non compare. Se il file non si può scrivere (permesso scaduto, file spostato), compare un avviso e i dati restano nella copia del browser. | | Mia ipotesi | Da confermare | app.js `avvisiGenerali` | No |
 
 ## 4. Importazione da Excel o CSV (formato generico)
 

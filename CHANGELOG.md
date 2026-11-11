@@ -1,5 +1,12 @@
 # Novità per versione
 
+## 0.5.0 — novembre 2026
+- **File dei dati**: in "Dati e backup" si sceglie un file (Chrome o Edge) dove l'app salva ogni modifica, oltre alla copia nel browser. Per passare a una nuova versione dell'app basta aprire lo stesso file: niente più backup e ripristino a mano.
+- Il file si scrive in modo sicuro: se qualcosa va storto, quello precedente resta intatto.
+- Se il file si riapre e il browser ha modifiche più recenti, l'app chiede quale copia tenere.
+- Se il file è stato spostato o il permesso non c'è più, un avviso permette di riaprirlo.
+- Nuovi controlli automatici sul file dei dati (64 test).
+
 ## 0.4.1 — novembre 2026
 - **Nome unico**: l'app, la repo, lo zip, i backup e i documenti si chiamano ora "Fascicoli Udienze Tracker" (`fascicoli-udienze-tracker`). Prima c'erano tre nomi diversi.
 - **Compatibilità**: i dati già salvati nel browser e i backup creati con il vecchio nome (`calendario-giudice`) si leggono ancora.

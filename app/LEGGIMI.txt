@@ -20,6 +20,17 @@ COME SI APRE
 Non c'è nessuna installazione e non servono permessi da amministratore.
 
 DOVE SONO I DATI
+FILE DEI DATI (consigliato, con Chrome o Edge)
+Nella scheda "Dati e backup" scegli "Crea un nuovo file dei dati" e indica dove salvarlo
+(per esempio in Documenti). Da quel momento l'app lo aggiorna a ogni modifica. Ogni volta
+che riapri l'app, il browser può chiedere di nuovo il permesso: premi "Riapri il file dei dati".
+PER PASSARE A UNA NUOVA VERSIONE: scarica la cartella nuova, aprila e, in "Dati e backup",
+scegli "Apri un file esistente" indicando lo stesso file: ritrovi tutti i dati.
+Il file contiene i nomi degli imputati: trattalo come un documento riservato.
+Se il file è stato spostato o cancellato, l'app te lo segnala; i dati restano comunque
+nella copia del browser.
+
+COPIA NEL BROWSER
 I dati restano solo sul computer, dentro il browser (archivio IndexedDB), e non
 vengono inviati altrove. Sono legati al browser e al profilo utente che usi:
 - aprendo l'app con un altro browser o su un altro computer trovi un archivio vuoto;

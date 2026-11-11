@@ -3,7 +3,7 @@
 App per organizzare il calendario delle udienze di un giudice penale: giornata con vuoti da riempire, importazione del ruolo da Excel, predibattimento e incameramento con i loro termini.
 
 - **Funziona senza internet** e senza installazione: si apre con un doppio clic su `index.html`, con Chrome o Edge, su Windows e macOS.
-- **I dati restano sul computer**, nell'archivio del browser. Nessun invio a server e nessun cloud.
+- **I dati restano sul computer**: in un file scelto da te (Chrome o Edge) e in una copia nel browser. Nessun invio a server e nessun cloud.
 - **Calcoli deterministici**: stesse informazioni, stesso risultato. Nessuna intelligenza artificiale e nessuna stima.
 
 ## Progetto personale
