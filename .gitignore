@@ -9,6 +9,9 @@ calendario-giudice-backup-*.json
 # File dei dati collegato dall'app (contiene i dati dei fascicoli)
 *-dati*.json
 
+# Cartella per i file REALI usati solo in locale per provare l'app: non va mai su GitHub.
+dati-locali/
+
 # File Excel e CSV: si caricano solo quelli di prova elencati qui sotto
 *.xlsx
 *.xls

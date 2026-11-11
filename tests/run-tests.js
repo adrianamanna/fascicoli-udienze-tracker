@@ -805,7 +805,7 @@ test('Il repository non contiene backup né file Excel reali (solo quelli di pro
   const vietati = [];
   (function visita(dir) {
     fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
-      if (e.name === '.git' || e.name === 'node_modules') return;
+      if (e.name === '.git' || e.name === 'node_modules' || e.name === 'dati-locali') return; // dati-locali: file reali, ignorati da git (controllo sotto)
       const p = path.join(dir, e.name);
       if (e.isDirectory()) return visita(p);
       const rel = path.relative(path.join(__dirname, '..'), p).split(path.sep).join('/');
@@ -815,6 +815,19 @@ test('Il repository non contiene backup né file Excel reali (solo quelli di pro
     });
   })(path.join(__dirname, '..'));
   assert.deepStrictEqual(vietati, []);
+});
+
+test('dati-locali/ è escluso da git e nessun suo file è mai stato aggiunto', function () {
+  const gi = fs.readFileSync(path.join(__dirname, '..', '.gitignore'), 'utf8').split(/\r?\n/).map(function (r) { return r.trim(); });
+  assert.ok(gi.indexOf('dati-locali/') >= 0, 'manca "dati-locali/" in .gitignore');
+  assert.ok(gi.indexOf('*-dati*.json') >= 0, 'manca "*-dati*.json" in .gitignore');
+  let tracciati = '';
+  try {
+    tracciati = require('child_process').execSync('git ls-files dati-locali', { cwd: path.join(__dirname, '..'), stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+  } catch (e) {
+    return; // git non disponibile (per esempio in un'esportazione senza cronologia): resta il controllo su .gitignore
+  }
+  assert.strictEqual(tracciati, '', 'file di dati-locali/ tracciati da git: ' + tracciati);
 });
 
 // ---------- determinismo e backup ----------
