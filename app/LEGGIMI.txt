@@ -1,0 +1,116 @@
+CALENDARIO UDIENZE DEL GIUDICE - versione 0.4 (Fasi 1-3: calendario, ruolo, predibattimento, incameramento)
+=====================================================
+
+COS'È
+Un'app per organizzare il calendario delle udienze. Funziona senza internet e non
+invia nessun dato all'esterno. Ogni calcolo segue regole fisse (nessuna intelligenza
+artificiale): gli stessi dati danno sempre lo stesso risultato.
+
+COSA SERVE
+Un computer Windows o macOS con Google Chrome o Microsoft Edge aggiornati.
+L'app è stata provata con il motore di Chrome ed Edge. Safari e Firefox non sono stati
+verificati: se li usi, fai backup frequenti.
+
+COME SI APRE
+1. Copia la cartella "calendario-giudice" dove vuoi sul computer (per esempio in Documenti).
+   Se hai ricevuto il file .zip, estrailo prima (tasto destro > Estrai tutto, su Windows;
+   doppio clic su macOS).
+2. Fai doppio clic sul file "index.html". Si apre nel browser.
+3. Per ritrovarlo più in fretta, aggiungi la pagina ai preferiti del browser.
+Non c'è nessuna installazione e non servono permessi da amministratore.
+
+DOVE SONO I DATI
+I dati restano solo sul computer, dentro il browser (archivio IndexedDB), e non
+vengono inviati altrove. Sono legati al browser e al profilo utente che usi:
+- aprendo l'app con un altro browser o su un altro computer trovi un archivio vuoto;
+- se cancelli i dati di navigazione del browser, puoi perderli.
+Per questo: fai un BACKUP regolare dalla scheda "Dati e backup" (pulsante "Scarica il
+backup") e conserva il file in un luogo sicuro. Il file contiene nomi di imputati:
+trattalo come un documento riservato.
+Per usare l'app su un altro computer: copia la cartella, apri index.html e, in
+"Dati e backup", ripristina il file di backup.
+
+IMPORTARE IL RUOLO DELLE UDIENZE (un file per anno, un foglio per giorno)
+Se il file è fatto come il tuo esempio (titolo "UDIENZA DEL 2 NOVEMBRE 2026 - LUNEDI'" e
+colonne Nr. Ord., Nr. R.G. NR, Cognome e Nome, Reato, P.M. titolare, Giudice, RINVIO DAL,
+ESITO, ORARIO, ANNOTAZIONI), l'app lo riconosce da sola:
+- prende la data dal titolo di ogni foglio (puoi escludere i fogli che non vuoi);
+- importa solo le righe del giudice che scegli (di solito "GIUDICE 1"; la scelta viene
+  ricordata e si cambia da Impostazioni);
+- interpreta le righe: annotazione "predibattimentale" = Predibattimento; reato che inizia
+  con "SVIL UP" = Incameramento da GUP (slot di 1 ora e 30); N. R.G. "SIGE" o "incidente
+  d'esecuzione" = Esecuzione; le altre arrivano da un rinvio e sono "Udienza dibattimentale
+  (da precisare)": istruttoria, repliche ecc., con l'annotazione come titolo;
+- conserva reato, P.M., numero d'ordine, RINVIO DAL ed ESITO;
+- le attività che iniziano alla stessa ora sono sovrapponibili (come le chiamate delle 9:00);
+- la durata è quella predefinita del tipo, perché nel file non c'è.
+Importando di nuovo lo stesso file, le righe già presenti sono riconosciute come duplicati.
+
+PRIMI PASSI
+1. Impostazioni > Giorni di udienza: spunta i giorni fissi (es. martedì e giovedì).
+2. Impostazioni > Orari: controlla fascia 9:00-15:00, limite 15:30, pausa 14:00-14:15.
+3. Importa da Excel: scarica il modello (o usa il tuo file), abbina le colonne,
+   controlla l'anteprima e importa. Puoi annullare un'importazione.
+4. Calendario: scegli un giorno; nel "righello" vedi le attività e i vuoti
+   (zone a righe color ambra). Clicca un vuoto per aggiungere un'attività.
+
+COSA FA QUESTA VERSIONE
+- Calendario del mese e giornata con righello (9:00-15:00, tolleranza fino alle 15:30,
+  pausa 14:00-14:15 non riempibile).
+- Festività nazionali italiane (Pasqua e Lunedì dell'Angelo calcolati), periodo feriale
+  1-31 agosto senza udienze, indisponibilità, giorni di udienza extra, santo patrono opzionale.
+- Calcolo dei minuti utili, occupati e liberi; individuazione dei vuoti (minimo 10 minuti);
+  segnalazione di sovrapposizioni, pausa e tolleranza.
+- Fascicoli e attività; attività provvisorie (appunti personali) che non occupano spazio.
+- Importazione da Excel (.xlsx) o CSV, con anteprima, controllo dei duplicati e annullamento.
+- Backup e ripristino; storico delle modifiche.
+
+PREDIBATTIMENTO (scheda "Predibattimento")
+1. Aggiungi i fascicoli ricevuti: uno alla volta oppure incollando un elenco (anche copiato da
+   Excel: RG; Imputato; Reato; Data notifica; Urgente). Serve la data di notifica del decreto
+   di citazione.
+2. Seleziona i fascicoli da fissare: l'app propone le date. Una data è:
+   - "Idonea" se rispetta tutto;
+   - "Con riserve" se entra solo una parte dei fascicoli o manca una data di notifica;
+   - "Non consentita" se è prima di notifica + 60 giorni (45 se urgente) oppure a meno di
+     5 settimane da un'altra udienza predibattimentale.
+   Per ogni data vedi giorni dall'udienza precedente, posti da 10 minuti, giorni liberi per
+   studiare i fascicoli. Puoi ordinare per "più comoda per studiare".
+3. "Fissa qui" crea per ogni fascicolo uno slot da 10 minuti dalla prima ora libera, senza
+   toccare la pausa 14:00-14:15. Se i fascicoli non entrano, ti chiede se usare la tolleranza.
+4. Ogni udienza prevede al massimo 30 fascicoli (circa 5 ore; modificabile in Impostazioni), con 10 minuti netti
+   tra un fascicolo e il successivo. Se selezioni più fascicoli, "Dividili in gruppi da 30"
+   propone un piano: gruppi da 30, ciascuno alla prima data idonea, a 5 settimane l'uno
+   dall'altro; i fascicoli urgenti e con la notifica più vecchia vanno per primi.
+   Il piano si applica con un solo pulsante.
+5. L'intervallo di 5 settimane si conta tra le udienze con molti fascicoli alla prima udienza
+   (soglia modificabile in Impostazioni; di default 5). I rinvii di singoli fascicoli su altri
+   giorni non contano. Un gruppo fissato con questa app conta sempre come udienza.
+
+INCAMERAMENTO (scheda "Incameramento")
+- Un'udienza di incameramento è UNO slot di 1 ora e 30 per TUTTI i fascicoli di quella data,
+  qualunque sia il loro numero (l'app mostra il tempo medio per fascicolo).
+- Aggiungi i fascicoli da incamerare (uno alla volta o incollando un elenco) indicando
+  l'origine (GUP, predibattimento, immediato) e la data del decreto, del provvedimento o
+  dell'ultima notifica.
+- Data minima: provvedimento + 20 giorni (GUP e predibattimento), notifica + 30 giorni (immediato).
+- Cadenza: da GUP ogni 3 mesi, da predibattimento ogni 6 mesi (modificabile in Impostazioni).
+  Le date più vicine sono "con riserve", con il motivo; decidi tu.
+- "Fissa qui" crea lo slot alla prima ora libera da 90 minuti, oppure aggiunge i fascicoli allo
+  slot già fissato quel giorno. Una giornata con 30 predibattimenti (5 ore) non ha spazio per
+  uno slot da 90 minuti.
+- "Incameramenti fissati" mostra per ogni slot: chiusura delle assegnazioni (20 giorni prima per
+  GUP e predibattimento, 30 per gli immediati), data da cui la lista è definitiva (scaduti i
+  15 giorni per i riti degli immediati) e stato.
+
+COSA NON FA ANCORA (fasi successive)
+- Esiti dell'udienza predibattimentale (rinvio a giudizio, rinotifica, riti, MAP, riunione).
+- Calendarizzazione automatica di istruttoria, perito, discussione, riserve, riti, MAP,
+  esecuzione.
+- Suggerimenti per riempire i vuoti ed esportazione in PDF/ICS.
+Queste regole sono già descritte nel documento di specifica e saranno aggiunte per fasi.
+
+NOTE
+- La data e l'ora dei campi di inserimento seguono la lingua del tuo sistema.
+- I termini di legge riportati nelle impostazioni sono quelli della specifica: vanno
+  controllati sui testi vigenti.

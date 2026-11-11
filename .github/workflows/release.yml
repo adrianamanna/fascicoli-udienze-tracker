@@ -1,0 +1,41 @@
+name: Release
+
+# Si avvia quando carichi un tag di versione, per esempio v0.4.0.
+# Esegue i test, controlla che la versione coincida e pubblica lo zip da scaricare.
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Esegui i test
+        run: npm test
+      - name: Controlla la versione
+        run: |
+          VERSIONE="${GITHUB_REF_NAME#v}"
+          ATTUALE="$(node -p "require('./package.json').version")"
+          if [ "$VERSIONE" != "$ATTUALE" ]; then
+            echo "Il tag è $VERSIONE ma package.json dice $ATTUALE"
+            exit 1
+          fi
+      - name: Crea lo zip dell'app
+        run: |
+          mkdir -p dist/calendario-giudice
+          cp -r app/. dist/calendario-giudice/
+          cd dist
+          zip -r "../calendario-giudice-${GITHUB_REF_NAME}.zip" calendario-giudice
+      - name: Pubblica la release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: calendario-giudice-${{ github.ref_name }}.zip
+          generate_release_notes: true

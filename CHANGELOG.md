@@ -1,0 +1,20 @@
+# Novità per versione
+
+## 0.4.0 — novembre 2026
+- **Incameramento**: nuova scheda. Uno slot unico di 90 minuti per tutti i fascicoli di quella data, con data minima per fascicolo (20 giorni dal decreto o dal provvedimento, 30 dalla notifica per l'immediato), cadenza per origine (GUP ogni 3 mesi, predibattimento ogni 6), chiusura delle liste e stato di ogni slot.
+- **Predibattimento**: massimo 30 fascicoli per udienza (circa 5 ore), slot da 10 minuti uno dopo l'altro; piano che divide molti fascicoli in gruppi da 30, a 5 settimane l'uno dall'altro.
+- Documento delle **regole realmente implementate** (`docs/regole_implementate_app.md`).
+- Mostrata la versione dell'app nella scheda "Dati e backup" e registrata nei backup.
+- Repository con test automatici e pubblicazione delle versioni.
+
+## 0.3.0
+- **Predibattimento**: scheda con i fascicoli da fissare (anche incollando un elenco), assistente alle date (60 giorni dalla notifica, 45 se urgente; 5 settimane tra le udienze), ordine "più comoda per studiare".
+
+## 0.2.0
+- **Importazione del ruolo delle udienze** (un foglio per giorno, più giudici): riconoscimento del formato, scelta del giudice, interpretazione delle righe (predibattimento, incameramento da GUP, esecuzione, udienza dibattimentale da precisare), conservazione di reato, P.M., RINVIO DAL ed ESITO.
+- Le attività che iniziano alla stessa ora sono sovrapponibili.
+
+## 0.1.0
+- Calendario del mese e giornata con righello (9:00-15:00, tolleranza fino alle 15:30, pausa 14:00-14:15), vuoti da riempire e saturazione.
+- Festività nazionali italiane, periodo feriale, indisponibilità, giorni extra, santo patrono opzionale.
+- Fascicoli e attività, attività provvisorie, importazione da Excel o CSV con anteprima e annullamento, backup e storico.

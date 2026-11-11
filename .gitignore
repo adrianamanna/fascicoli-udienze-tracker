@@ -1,0 +1,24 @@
+# DATI REALI: non devono mai finire nel repository.
+# La cronologia di git è permanente: un file caricato per errore resta recuperabile anche dopo averlo cancellato.
+
+# Backup dell'app (contengono i dati dei fascicoli)
+*backup*.json
+calendario-giudice-backup-*.json
+
+# File Excel e CSV: si caricano solo quelli di prova elencati qui sotto
+*.xlsx
+*.xls
+*.csv
+!app/modello_import.xlsx
+!tests/fixtures/ruolo_sintetico.xlsx
+!tests/fixtures/sample.xlsx
+!tests/fixtures/sample.csv
+
+# Generati
+dist/
+node_modules/
+
+# Sistema
+.DS_Store
+Thumbs.db
+~$*
