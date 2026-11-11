@@ -95,7 +95,7 @@ Tutti i calcoli sono **deterministici**: stessi dati, stesso risultato, nessuna 
 | RUO-01 | Il file è un **ruolo** se almeno un foglio ha nelle prime righe un titolo come "UDIENZA DEL 2 NOVEMBRE 2026 - LUNEDI". La **data di ogni foglio** viene dal titolo; se manca, dal nome del foglio (es. "16.11") con l'anno degli altri fogli. | | Giudice | Confermato | importer.js `rilevaRuolo` | No |
 | RUO-02 | Colonne usate: Nr. Ord., Nr. R.G. NR, Cognome e Nome, Reato, P.M. titolare, Giudice, RINVIO DAL, ESITO, ORARIO, ANNOTAZIONI. CANCELLIERE si ignora. | | Giudice | Confermato | importer.js `tabellaDaRuolo` | No |
 | RUO-03 | **Annotazione che contiene "predibattimentale"** (anche scritta male, "predibiattimentale") = **Predibattimento**. | | Giudice | Da confermare | importer.js `inferisciRuolo` | No |
-| RUO-04 | **Reato che inizia con "SVIL UP"** = **Incameramento**, con il fascicolo di origine **GUP**. | | Mia ipotesi, in parte confermata | **Da confermare** | importer.js `inferisciRuolo` | No |
+| RUO-04 | **Reato che inizia con "SVIL UP"** = **Predibattimento** (slot da 10 minuti). Il tipo si può cambiare a mano nell'anteprima, perché "di solito" non vuol dire sempre. L'origine del fascicolo non viene impostata. | | Giudice ("di solito è un'udienza da predibattimento") | Confermato; eccezioni da chiarire | importer.js `inferisciRuolo` | Il tipo si cambia a mano |
 | RUO-05 | **N. R.G. "SIGE"** oppure reato "incidente d'esecuzione" = **Esecuzione**. Il fascicolo si chiama "SIGE" seguito dal numero d'ordine (es. "SIGE 534/26"). | | Mia ipotesi | Da confermare | importer.js `inferisciRuolo`, `tabellaDaRuolo` | No |
 | RUO-06 | **Tutte le altre righe** arrivano da un rinvio e sono **Udienza dibattimentale (da precisare)**: istruttoria, repliche e così via, secondo il caso. L'annotazione diventa il titolo. | | Giudice | Confermato | importer.js `inferisciRuolo` | Il tipo si cambia a mano |
 | RUO-07 | L'**ora** è quella della colonna ORARIO. La **durata** non è nel file: vale quella del tipo (10 minuti per predibattimento, esecuzione e udienza dibattimentale; 90 per l'incameramento). | | Giudice | Confermato | importer.js; params `durate` | Sì |
@@ -103,6 +103,7 @@ Tutti i calcoli sono **deterministici**: stessi dati, stesso risultato, nessuna 
 | RUO-09 | **RINVIO DAL** è conservato: "gg,mm,aa" diventa una data, "1 UD" resta com'è (prima udienza). ESITO, reato, P.M. e numero d'ordine sono conservati. | | Giudice | Confermato | importer.js `normalizzaRinvio` | No |
 | RUO-10 | Un **asterisco** accanto al numero di ruolo (es. "1234/24*") oggi è parte del numero. | | Mia ipotesi | **Da chiarire** | | |
 | RUO-11 | Parole come "misura cautelare", "direttissima", "differito fuori udienza" restano **solo come note**: non cambiano priorità né calcoli. | | Mia ipotesi | **Da chiarire** | | |
+| RUO-12 | **Annotazione che contiene "420 quater"** (o "rintraccio") = **Udienza dopo rintraccio (art. 420-quater)**: l'udienza che segue il rintraccio dell'imputato, dopo la sospensione del processo per assenza. Durata 10 minuti. L'annotazione intera resta nelle note. | 10 minuti | Giudice | Confermato il significato; durata **da confermare** | importer.js `inferisciRuolo`, `REGOLE_TIPO` | Sì, Impostazioni > Durate |
 
 ## 6. Predibattimento
 
@@ -146,6 +147,7 @@ Si usano quando importi senza durata o quando crei un'attività. Si cambiano in 
 | Predibattimento | 10 | Giudice | Confermato |
 | Incameramento (slot unico) | 90 | Giudice | Confermato |
 | Udienza dibattimentale (da precisare) | 10 | Mia ipotesi | **Da confermare** |
+| Udienza dopo rintraccio (art. 420-quater) | 10 | Mia ipotesi | **Da confermare** |
 | Istruttoria | 30 | Mia ipotesi (media per testimone) | Da confermare |
 | Discussione | 30 | Specifica (suggerimento) | Da confermare |
 | Repliche | 10 | Specifica | Da confermare |
@@ -188,7 +190,7 @@ Queste regole sono nel documento di specifica, non ancora nel programma:
 
 ## 11. Punti che ti chiedo di confermare o correggere
 
-1. **RUO-04** "SVIL UP": è davvero l'incameramento da GUP? L'ora indicata è l'inizio dello slot?
+1. ~~RUO-04 "SVIL UP"~~ **Chiarito**: di solito è un'udienza da predibattimento. Resta da sapere se ci sono eccezioni (quando non lo è).
 2. **RUO-10** L'asterisco accanto al numero di ruolo: che cosa significa?
 3. **RUO-11** "Misura cautelare" e "direttissima": devono dare priorità?
 4. **PRE-06** La soglia di 5 fascicoli per riconoscere un'udienza predibattimentale ti sembra giusta?

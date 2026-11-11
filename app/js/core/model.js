@@ -8,6 +8,7 @@
     PREDIB: { label: 'Predibattimento', famiglia: 'predib' },
     INCAMERAMENTO: { label: 'Incameramento', famiglia: 'dib' },
     DIBATTIMENTO: { label: 'Udienza dibattimentale (da precisare)', famiglia: 'dib' },
+    RINTRACCIO: { label: 'Udienza dopo rintraccio (art. 420-quater)', famiglia: 'dib' },
     ISTRUTTORIA: { label: 'Istruttoria', famiglia: 'dib' },
     DISCUSSIONE: { label: 'Discussione', famiglia: 'dib' },
     REPLICHE: { label: 'Repliche', famiglia: 'dib' },

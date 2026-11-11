@@ -18,6 +18,7 @@
         PREDIB: 10,
         INCAMERAMENTO: 90,
         DIBATTIMENTO: 10,
+        RINTRACCIO: 10,
         ISTRUTTORIA: 30,
         DISCUSSIONE: 30,
         REPLICHE: 10,

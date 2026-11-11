@@ -4,6 +4,7 @@
 - **Fase del fascicolo**: ogni fascicolo ha una fase (predibattimento, in attesa di incameramento, istruttoria, discussione, in riserva, riti o trattative, messa alla prova, esecuzione, chiuso). Si sceglie nella scheda; se non è indicata, l'app la ricava dai segni che ci sono già (da fissare in predibattimento, da incamerare, prossima attività).
 - Scheda **Fascicoli**: colonna "Fase" e filtro per fase con il numero di fascicoli per ciascuna.
 - Il cambio di fase è registrato nello storico.
+- **Ruolo Excel**: le righe con reato "SVIL UP" sono ora **predibattimenti** (prima erano incameramenti da GUP da 90 minuti, che occupavano la giornata a torto). Le annotazioni "420 quater" diventano la nuova attività **Udienza dopo rintraccio (art. 420-quater)**.
 - **Nuovo aspetto**: tema sempre chiaro (niente più sfondo scuro), intestazione fissa in alto, schede bianche con ombre leggere, pulsanti, tabelle e messaggi ridisegnati. Lo stato del salvataggio è una piccola etichetta in basso a destra.
 
 ## 0.5.0 — novembre 2026

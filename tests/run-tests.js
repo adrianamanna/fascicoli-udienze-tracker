@@ -427,7 +427,7 @@ test('Ruolo reale: per GIUDICE 1 ci sono 43 righe e i tipi sono riconosciuti', a
   assert.strictEqual(piano.riepilogo.altriGiudici, 58);
   const per = {};
   piano.righe.forEach(function (v) { per[v.evento.tipo] = (per[v.evento.tipo] || 0) + 1; });
-  assert.deepStrictEqual(per, { DIBATTIMENTO: 3, PREDIB: 34, INCAMERAMENTO: 4, ESECUZIONE: 2 });
+  assert.deepStrictEqual(per, { DIBATTIMENTO: 3, PREDIB: 38, ESECUZIONE: 2 });
   const misura = piano.righe.find(function (v) { return /misura cautelare/.test(v.evento.note); });
   assert.strictEqual(misura.evento.tipo, 'DIBATTIMENTO');
   assert.strictEqual(misura.evento.titolo, 'misura cautelare: obbligo di presentazione');
@@ -453,9 +453,23 @@ test('Ruolo reale: fascicoli, SIGE, RINVIO DAL e orari', async function () {
   assert.strictEqual(unaUd.evento.tipo, 'PREDIB');
   const sige = piano.righe.filter(function (v) { return v.evento.tipo === 'ESECUZIONE'; }).map(function (v) { return v.fascicolo.rg + '@' + v.evento.inizio; });
   assert.deepStrictEqual(sige, ['SIGE 534/26@14:00', 'SIGE 535/26@14:00']);
-  const svil = piano.righe.filter(function (v) { return v.evento.tipo === 'INCAMERAMENTO'; });
-  assert.ok(svil.every(function (v) { return v.fascicolo.origine === 'GUP'; }));
+  // "SVIL UP" nel reato: di solito è un'udienza da predibattimento (non più incameramento da GUP).
+  const svil = piano.righe.filter(function (v) { return /^SVIL UP/i.test(v.fascicolo.reato); });
+  assert.strictEqual(svil.length, 4);
+  assert.ok(svil.every(function (v) { return v.evento.tipo === 'PREDIB'; }));
   assert.deepStrictEqual(svil.map(function (v) { return v.foglio + ' ' + v.evento.inizio; }), ['2.11 14:00', '9.11 12:30', '9.11 12:30', '9.11 14:30']);
+});
+
+test('Ruolo: "420 quater" è un\'udienza dopo rintraccio; "SVIL UP" è predibattimento', function () {
+  const I = GC.importer;
+  const rint = I.inferisciRuolo('9001/20', '640 CP', 'SENT. n/n - 420 quater cpp');
+  assert.strictEqual(I.analizzaTipo(rint.tipo).tipo, 'RINTRACCIO');
+  assert.strictEqual(I.analizzaTipo(I.inferisciRuolo('9002/20', '640 CP', 'sent. n/n - 420 quater cpp - lista testi').tipo).tipo, 'RINTRACCIO');
+  assert.strictEqual(I.analizzaTipo(I.inferisciRuolo('9003/24', 'SVIL UP 640 CP', '').tipo).tipo, 'PREDIB');
+  assert.strictEqual(I.analizzaTipo(I.inferisciRuolo('9004/24', '640 CP', 'UDIENZA PREDIBATTIMENTALE').tipo).tipo, 'PREDIB');
+  assert.strictEqual(I.analizzaTipo(I.inferisciRuolo('SIGE', "incidente d'esecuzione", '').tipo).tipo, 'ESECUZIONE');
+  assert.strictEqual(GC.params.defaults().durate.RINTRACCIO, 10);
+  assert.ok(GC.model.TIPI.RINTRACCIO);
 });
 
 test('Ruolo reale: stessa ora = sovrapponibili, nessun conflitto a calendario; seconda importazione tutta duplicata', async function () {
@@ -510,9 +524,9 @@ function fascicoliNuovi(s, n, extra) {
   return out;
 }
 
-test('Predib: la sola udienza vera del ruolo è il 2 novembre (26 alla prima udienza, 32 in tutto)', async function () {
+test('Predib: la sola udienza vera del ruolo è il 2 novembre (26 alla prima udienza, 33 in tutto)', async function () {
   const s = await statoConRuolo();
-  assert.deepStrictEqual(GC.predib.udienze(s), [{ data: '2026-11-02', prime: 26, totale: 32 }]);
+  assert.deepStrictEqual(GC.predib.udienze(s), [{ data: '2026-11-02', prime: 26, totale: 33 }]);
 });
 
 test('Predib: data minima = notifica + 60 giorni (45 se urgente), e fascicoli senza notifica segnalati', function () {
@@ -690,8 +704,20 @@ test('Mesi: aggiungere mesi di calendario senza uscire dal mese', function () {
   assert.strictEqual(D.addMonths('2026-12-15', 6), '2027-06-15');
 });
 
-test('Incameramento: gli slot del ruolo reale (2 novembre 14:00 e 9 novembre 12:30 e 14:30)', async function () {
+/** Ruolo + tre slot di incameramento da GUP (2 novembre 14:00; 9 novembre 12:30 con 2 fascicoli e 14:30), come nel vecchio ruolo di prova. */
+async function statoConRuoloEIncameramenti() {
   const s = await statoConRuolo();
+  [['2026-11-02', '14:00', 1], ['2026-11-09', '12:30', 2], ['2026-11-09', '14:30', 1]].forEach(function (slot) {
+    for (let i = 0; i < slot[2]; i++) {
+      const f = GC.model.addFascicolo(s, { rg: 'INC ' + slot[0] + ' ' + slot[1] + ' ' + i, origine: 'GUP' }).valore;
+      GC.model.addEvento(s, { fascicoloId: f.id, data: slot[0], inizio: slot[1], durata: 90, tipo: 'INCAMERAMENTO', sovrapponibile: true });
+    }
+  });
+  return s;
+}
+
+test('Incameramento: gli slot del ruolo reale (2 novembre 14:00 e 9 novembre 12:30 e 14:30)', async function () {
+  const s = await statoConRuoloEIncameramenti();
   assert.deepStrictEqual(GC.incamera.blocchi(s).map(function (b) { return b.data + ' ' + b.inizio + ' n=' + b.n; }), ['2026-11-02 14:00 n=1', '2026-11-09 12:30 n=2', '2026-11-09 14:30 n=1']);
 });
 
@@ -711,7 +737,7 @@ test('Incameramento: data minima 20 giorni (GUP e predibattimento), 30 giorni (i
 });
 
 test('Incameramento: GUP ogni 3 mesi dall\'ultimo incameramento (9 novembre), immediato senza cadenza', async function () {
-  const s = await statoConRuolo();
+  const s = await statoConRuoloEIncameramenti();
   const g = GC.model.addFascicolo(s, { rg: 'G/26', origine: 'GUP', dataProvvedimento: '2026-11-20' }).valore;
   const c = GC.incamera.candidate(s, [g], { oggi: '2026-11-03', giorni: 200 });
   assert.strictEqual(c.minimo.data, '2026-12-10');

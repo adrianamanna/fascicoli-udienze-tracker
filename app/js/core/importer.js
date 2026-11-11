@@ -181,6 +181,7 @@
 
   const REGOLE_TIPO = [
     ['PREDIB', /predib/],
+    ['RINTRACCIO', /rintracc|420 ?quater/],
     ['INCAMERAMENTO', /incamer/],
     ['MAP', /\bmap\b|messa alla prova/],
     ['ESECUZIONE', /esecuz/],
@@ -593,7 +594,10 @@
     const a = norm(annotazione);
     const r = norm(reato);
     if (/predi/.test(a)) return { tipo: 'Predibattimento', origine: '' };
-    if (/^svil up\b/.test(r)) return { tipo: 'Incameramento', origine: 'GUP' };
+    // Annotazione "420 quater": udienza che segue il rintraccio dell'imputato (processo sospeso per assenza, art. 420-quater c.p.p.).
+    if (/420 ?quater|rintracc/.test(a)) return { tipo: 'Udienza dopo rintraccio (art. 420-quater)', origine: '' };
+    // "SVIL UP" nel reato: di solito è un'udienza da predibattimento (indicato dal giudice).
+    if (/^svil up\b/.test(r)) return { tipo: 'Predibattimento', origine: '' };
     if (norm(rg) === 'sige' || /esecuzione/.test(r)) return { tipo: 'Esecuzione', origine: '' };
     // Le altre righe arrivano da un rinvio: sono udienze di prosecuzione (istruttoria, repliche, ecc.), da precisare.
     return { tipo: annotazione && String(annotazione).trim() ? 'Udienza dibattimentale: ' + String(annotazione).trim() : 'Udienza dibattimentale', origine: '' };

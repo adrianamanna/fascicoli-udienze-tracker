@@ -48,9 +48,9 @@ ESITO, ORARIO, ANNOTAZIONI), l'app lo riconosce da sola:
 - prende la data dal titolo di ogni foglio (puoi escludere i fogli che non vuoi);
 - importa solo le righe del giudice che scegli (di solito "GIUDICE 1"; la scelta viene
   ricordata e si cambia da Impostazioni);
-- interpreta le righe: annotazione "predibattimentale" = Predibattimento; reato che inizia
-  con "SVIL UP" = Incameramento da GUP (slot di 1 ora e 30); N. R.G. "SIGE" o "incidente
-  d'esecuzione" = Esecuzione; le altre arrivano da un rinvio e sono "Udienza dibattimentale
+- interpreta le righe: annotazione "predibattimentale" = Predibattimento; annotazione "420 quater" =
+  Udienza dopo rintraccio; reato che inizia con "SVIL UP" = Predibattimento (di solito; puoi
+  cambiarlo a mano); N. R.G. "SIGE" o "incidente d'esecuzione" = Esecuzione; le altre arrivano da un rinvio e sono "Udienza dibattimentale
   (da precisare)": istruttoria, repliche ecc., con l'annotazione come titolo;
 - conserva reato, P.M., numero d'ordine, RINVIO DAL ed ESITO;
 - le attività che iniziano alla stessa ora sono sovrapponibili (come le chiamate delle 9:00);
