@@ -1,6 +1,6 @@
 # Fascicoli Udienze Tracker
 
-App per organizzare il calendario delle udienze di un giudice penale: giornata con vuoti da riempire, importazione del ruolo da Excel, predibattimento e incameramento con i loro termini.
+App per organizzare il calendario delle udienze di un giudice penale: giornata con vuoti da riempire, importazione del ruolo da Excel, predibattimento e incameramento con i loro termini, fase di ogni fascicolo ed esito delle udienze con proposta della prossima azione.
 
 - **Funziona senza internet** e senza installazione: si apre con un doppio clic su `index.html`, con Chrome o Edge, su Windows e macOS.
 - **I dati restano sul computer**: in un file scelto da te (Chrome o Edge) e in una copia nel browser. Nessun invio a server e nessun cloud.
@@ -29,7 +29,8 @@ Le istruzioni per chi usa l'app sono nel file `LEGGIMI.txt` dentro lo zip (anche
 1. Impostazioni: giorni di udienza, orari, festività.
 2. Importa da Excel: il ruolo delle udienze (un foglio per giorno) oppure un elenco semplice (modello `modello_import.xlsx`).
 3. Predibattimento e Incameramento: fissare i fascicoli con le date proposte dall'app.
-4. Dati e backup: **fare un backup regolare**. I dati sono legati a quel browser.
+4. Dopo ogni udienza: scheda **Fascicoli**, pannello "Da decidere". Si registra l'esito e l'app propone la prossima attività e la fase; il giudice conferma o cambia, niente cambia da solo.
+5. Dati e backup: scegliere un **file dei dati** (Chrome o Edge) dove l'app salva ogni modifica; in alternativa fare un backup regolare. La copia nel browser resta comunque.
 
 ## Privacy e dati
 
@@ -44,7 +45,7 @@ Le istruzioni per chi usa l'app sono nel file `LEGGIMI.txt` dentro lo zip (anche
 app/                  l'app (è questa cartella che viene distribuita)
   index.html          pagina principale
   css/app.css         stile
-  js/core/            calcoli: date, calendario, predibattimento, incameramento, importazione, salvataggio
+  js/core/            calcoli: date, calendario, predibattimento, incameramento, esiti, importazione, salvataggio
   js/ui/app.js        interfaccia
   modello_import.xlsx modello Excel da compilare
   LEGGIMI.txt         istruzioni per chi usa l'app
@@ -56,7 +57,7 @@ docs/                 specifica delle regole e regole realmente implementate
 ## Le regole del programma
 
 - `docs/specifica_fascicoli_udienze_tracker.md`: la specifica completa, con tutto ciò che si vuole ottenere.
-- `docs/regole_implementate_app.md`: **le regole che il programma applica davvero**, con codice, valore, fonte e stato. È il documento da correggere quando una regola non è giusta.
+- `docs/regole_implementate_app.md`: **le regole che il programma applica davvero**, con codice, valore, fonte e stato, compresa la tabella degli esiti delle udienze e della prossima azione proposta. È il documento da correggere quando una regola non è giusta, e va aggiornato a ogni modifica del programma.
 
 ## Sviluppo
 
@@ -66,7 +67,7 @@ Serve solo Node.js 20 o superiore. Nessuna installazione di pacchetti.
 npm test
 ```
 
-Esegue tutti i test dei calcoli (date, festività, giornata, predibattimento, incameramento, importazione, backup).
+Esegue tutti i test dei calcoli (date, festività, giornata, predibattimento, incameramento, esiti, importazione, file dei dati, backup).
 
 ### Fare una nuova versione
 
@@ -77,10 +78,10 @@ Esegue tutti i test dei calcoli (date, festività, giornata, predibattimento, in
 5. Salva e pubblica:
    ```
    git add .
-   git commit -m "Versione 0.5.0: descrizione breve"
+   git commit -m "Versione 0.6.0: descrizione breve"
    git push
-   git tag v0.5.0
-   git push origin v0.5.0
+   git tag v0.6.0
+   git push origin v0.6.0
    ```
 6. Il tag avvia la pubblicazione automatica: dopo un paio di minuti compare la nuova release con lo zip da scaricare.
 

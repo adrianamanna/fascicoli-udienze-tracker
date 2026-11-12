@@ -292,6 +292,7 @@
       sovrapponibile: !!d.sovrapponibile,
       rinvioDal: String(d.rinvioDal || '').trim(),
       esito: String(d.esito || '').trim(),
+      esitoCodice: String(d.esitoCodice || ''),
       fonte: d.fonte || 'manuale'
     };
     const err = model.validateEvento(state, dati);
@@ -309,11 +310,12 @@
     if (!isNaN(D.hhmmToMin(nuovo.inizio))) nuovo.inizio = D.minToHhmm(D.hhmmToMin(nuovo.inizio));
     const err = model.validateEvento(state, nuovo);
     if (err.length) return { ok: false, errori: err };
-    ['fascicoloId', 'data', 'inizio', 'durata', 'tipo', 'stato', 'titolo', 'note', 'sovrapponibile', 'rinvioDal', 'esito'].forEach(function (k) {
+    ['fascicoloId', 'data', 'inizio', 'durata', 'tipo', 'stato', 'titolo', 'note', 'sovrapponibile', 'rinvioDal', 'esito', 'esitoCodice'].forEach(function (k) {
       e[k] = nuovo[k];
     });
     e.rinvioDal = String(e.rinvioDal || '').trim();
     e.esito = String(e.esito || '').trim();
+    e.esitoCodice = String(e.esitoCodice || '');
     e.fascicoloId = e.fascicoloId || null;
     e.titolo = String(e.titolo || '').trim();
     e.note = String(e.note || '').trim();

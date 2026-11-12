@@ -1,4 +1,4 @@
-# Regole usate dal programma "Fascicoli Udienze Tracker" (versione 0.4)
+# Regole usate dal programma "Fascicoli Udienze Tracker" (versione 0.6)
 
 Questo documento elenca **ogni regola che il programma applica davvero** quando calcola, controlla o propone qualcosa. Serve a correggerle via via: dimmi il **codice** della regola (per esempio PRE-05) e il valore o il comportamento giusto, e aggiorno programma e documento insieme.
 
@@ -66,6 +66,64 @@ Tutti i calcoli sono **deterministici**: stessi dati, stesso risultato, nessuna 
 | DAT-09 | **File dei dati** (solo Chrome ed Edge): se scegli un file, a ogni modifica l'app lo riscrive per intero, oltre alla copia nel browser. Il file ha lo stesso formato del backup. La scrittura passa da un file temporaneo: se fallisce, il file precedente resta intatto. | | Giudice (dati solo sul dispositivo) | Da confermare | filedati.js; app.js `salvaOra` | Sì, Dati e backup |
 | DAT-10 | **Riapertura del file**: se il file ha dati e il browser no, si usa il file; se il file è più recente del browser (data `meta.salvato`), si usa il file; se il browser è più recente, l'app **chiede** quale copia tenere; se il file è vuoto, ci si scrive la copia del browser. Alla prima scelta di un file che ha già dati, l'app chiede conferma prima di sostituire i dati attuali. | | Mia ipotesi | Da confermare | filedati.js `scegliFonte`; app.js `usaFile` | No |
 | DAT-11 | Con un file collegato, il promemoria del backup non compare. Se il file non si può scrivere (permesso scaduto, file spostato), compare un avviso e i dati restano nella copia del browser. | | Mia ipotesi | Da confermare | app.js `avvisiGenerali` | No |
+
+## 3-bis. Esiti delle udienze e prossima azione
+
+Per ogni udienza si può registrare un **esito** scelto da un elenco (Fascicoli > Da decidere, scheda del fascicolo > Esito, oppure la finestra dell'attività > "Esito e prossima azione"). Dall'esito l'app **propone** la prossima attività, la fase e, se serve, un avviso. **Il giudice conferma o cambia data, ora e durata; l'app non crea né cambia niente da sola.** L'elenco e le regole vengono dalla specifica (la colonna Fonte rimanda ai suoi codici). Gli esiti validi in ogni udienza compaiono sempre, in coda a quelli propri del tipo di udienza.
+
+| Cod. | Regola | Valore attuale | Fonte | Stato | Dove | Modificabile |
+|---|---|---|---|---|---|---|
+| ESI-A | Per **prima data utile** si intende: il primo giorno di udienza, dal giorno dopo l'udienza (o da oggi, se l'udienza è già passata), non bloccato e con un vuoto libero abbastanza lungo per la durata. Si guardano i 400 giorni successivi. | 400 giorni | Giudice (T-04, S-04: "il prima possibile") | Da confermare | esiti.js `trovaData` | No |
+| ESI-B | Quando l'esito indica un intervallo (30 giorni, 3 mesi...), si parte dalla data dell'udienza **più** l'intervallo e si prende la prima data utile da lì in poi. | | Mia ipotesi | Da confermare | esiti.js `proponi` | Intervalli: sì, nel codice (vedi sotto) |
+| ESI-C | **Rinvii per riti o trattative**: primo rinvio a 30 giorni, ogni rinvio successivo aggiunge altri 30 giorni (60, 90...). Il numero di rinvii è contato dalle attività del fascicolo. | 30 + 30 | Giudice (30 giorni); incremento mia proposta (Z-04) | Incremento da confermare | esiti.js; params `rinvii.ritiPrimo`, `ritiIncremento` | Solo nel codice |
+| ESI-D | **Perito**: l'esame si propone nell'**ultima** data utile entro 60 giorni dall'ordinanza (limite di legge, ordinatorio). Il conferimento dell'incarico dura 10 minuti e si propone alla prima data utile. | 60 giorni; 10 minuti | Codice (art. 508 c. 1); giudice (PE-01) | Da verificare | esiti.js; params `termini.periziaMax`, `rinvii.conferimentoPerito` | Solo nel codice |
+| ESI-E | **Rinotifica**: 3 mesi. **MAP 2**: 90 giorni da MAP 1. **Esecuzione, rinvio per acquisire atti**: 30 giorni. | 3 mesi; 90; 30 | Giudice (rinotifica); protocolli (MAP: da 3 a 6 mesi); mia ipotesi (esecuzione) | Da confermare | params `rinvii.rinotificaMesi`, `mapSecondoGiorni`, `esecuzioneAtti` | Solo nel codice |
+| ESI-F | Il **rinvio di un incameramento** è un'udienza dibattimentale da 10 minuti (non un altro slot da 90). | | Mia ipotesi | Da confermare | esiti.js `proponi` | No |
+| ESI-G | **Sentenza**: nessuna nuova udienza, fase "Chiuso". Compare l'avviso della data di deposito della motivazione (15 giorni, **da verificare sull'art. 544**); **non** è ancora registrata come scadenza. | 15 giorni | Specifica S-10 | Da verificare | esiti.js; params `rinvii.motivazioneGiorni` | Solo nel codice |
+| ESI-H | La **fase** del fascicolo cambia solo se il giudice lascia spuntata la casella nella finestra dell'esito. Il cambio è registrato nello storico (FAS-03). | | Giudice (decide sempre lui) | Confermato | app.js `dialogoEsito` | Sì, a ogni conferma |
+| ESI-I | **Da decidere**: sono i fascicoli non chiusi la cui ultima udienza ufficiale è già svolta (data fino a oggi) e che **non hanno esito**, oppure hanno un esito che prevede una nuova udienza e **non ne esiste ancora una dopo**. Chi ha già un'udienza futura non compare. | | Mia ipotesi | Da confermare | esiti.js `daDecidere` | No |
+
+Gli esiti previsti (la numerazione segue l'ordine del programma):
+
+| Cod. | Esito | Offerto in | Cosa propone | Fase proposta | Fonte |
+|---|---|---|---|---|---|
+| ESI-01 | Rinvio (prosegue) | sempre | Stesso tipo di udienza · prima data utile con posto | invariata | G-04, T-07 |
+| ESI-02 | Mi riservo la decisione | sempre | Scioglimento riserva · prima data utile con posto | In riserva | G-12, S-01, S-04 |
+| ESI-03 | Rinvio per riti o trattative | sempre | Rinvio per riti o trattative · 30 giorni il primo rinvio, +30 a ogni rinvio | Rinvio per riti o trattative | Z-01, Z-04 |
+| ESI-04 | Richiesta di messa alla prova (MAP) | sempre | Messa alla prova · prima data utile con posto | Messa alla prova (sospeso) | M-01, P-18 |
+| ESI-05 | Riunione con altro fascicolo | sempre | Riunione · prima data utile con posto | invariata | R-01, R-02, P-17 |
+| ESI-06 | Nomina del perito | sempre | Perito · prima data utile con posto | Istruttoria | PE-01, P-16 |
+| ESI-07 | Sentenza o decreto: fascicolo definito | sempre | Nessuna nuova udienza: fascicolo definito (promemoria motivazione) | Chiuso | S-10 |
+| ESI-08 | Prosecuzione del giudizio: va ad altro giudice | Predibattimento | Nessuna nuova udienza: fascicolo definito | Chiuso | P-10 |
+| ESI-09 | Restituzione al PM o non luogo a procedere | Predibattimento | Nessuna nuova udienza: fascicolo definito | Chiuso | P-11 |
+| ESI-10 | Rinotifica | Predibattimento | Predibattimento · rinotificaMesi mesi, o prima data utile successiva | Predibattimento | P-12 |
+| ESI-11 | Abbreviato | Predibattimento | Discussione · prima data utile con posto | Discussione | P-13 |
+| ESI-12 | Abbreviato condizionato | Predibattimento | Istruttoria · prima data utile con posto | Istruttoria | P-14 |
+| ESI-13 | Patteggiamento, remissione di querela o altro non luogo a procedere | Predibattimento | Nessuna nuova udienza: fascicolo definito | Chiuso | P-15 |
+| ESI-14 | Prove ammesse: calendarizzo l'istruttoria | Incameramento, Udienza dibattimentale, Udienza dopo rintraccio, Scioglimento riserva, Rinvio per riti o trattative | Istruttoria · prima data utile con posto | Istruttoria | N-02, N-05, T-01 |
+| ESI-15 | Imputato rintracciato: si procede | Udienza dopo rintraccio | Udienza dibattimentale · prima data utile con posto | invariata | RUO-12 (da confermare) |
+| ESI-16 | Istruttoria non conclusa: prosegue | Istruttoria | Istruttoria · prima data utile con posto | Istruttoria | T-04, T-07 |
+| ESI-17 | Istruttoria conclusa: discussione in altra udienza | Istruttoria | Discussione · prima data utile con posto | Discussione | D-02 |
+| ESI-18 | Istruttoria conclusa: discussione nella stessa udienza | Istruttoria | Nessuna nuova udienza: si prosegue nella stessa | Discussione | D-01 |
+| ESI-19 | Discussione: rinvio per le repliche | Discussione | Repliche · prima data utile con posto | Discussione | D-04 |
+| ESI-20 | Riapro l'istruttoria (art. 507) | Discussione, Repliche | Istruttoria · prima data utile con posto | Istruttoria | D-03, D-05, D-06 |
+| ESI-21 | Incarico conferito: esame del perito | Perito | Perito · ultima data utile entro 60 giorni (art. 508) | Istruttoria | PE-02 |
+| ESI-22 | Perito esaminato: prosegue l'istruttoria | Perito | Istruttoria · prima data utile con posto | Istruttoria | PE-09 |
+| ESI-23 | Integrazione o nuova perizia | Perito | Perito · ultima data utile entro 60 giorni (art. 508) | Istruttoria | PE-02, PE-11 |
+| ESI-24 | Richiesto l'abbreviato | Rinvio per riti o trattative | Discussione · prima data utile con posto | Discussione | Z-07, P-13 |
+| ESI-25 | Richiesto l'abbreviato condizionato | Rinvio per riti o trattative | Istruttoria · prima data utile con posto | Istruttoria | Z-07, P-14 |
+| ESI-26 | Patteggiamento | Rinvio per riti o trattative | Nessuna nuova udienza: fascicolo definito | Chiuso | Z-07, P-15 |
+| ESI-27 | Remissione di querela depositata e accettata | Rinvio per riti o trattative | Nessuna nuova udienza: fascicolo definito | Chiuso | Z-07, Z-08 |
+| ESI-28 | Trattative fallite o nessuna richiesta: flusso ordinario | Rinvio per riti o trattative | Istruttoria · prima data utile con posto | Istruttoria | Z-07 |
+| ESI-29 | Istanza ammissibile: programma con UEPE (MAP 2) | Messa alla prova | Messa alla prova · mapSecondoGiorni giorni, o prima data utile successiva | Messa alla prova (sospeso) | M-02, M-03 |
+| ESI-30 | MAP ammessa e procedimento sospeso: udienza finale | Messa alla prova | Messa alla prova · scelta del giudice (nessuna data proposta) | Messa alla prova (sospeso) | M-03, M-04, M-07 |
+| ESI-31 | Rinvio MAP supplementare (UEPE chiede tempo) | Messa alla prova | Messa alla prova · prima data utile con posto | Messa alla prova (sospeso) | M-09 |
+| ESI-32 | Esito positivo: reato estinto | Messa alla prova | Nessuna nuova udienza: fascicolo definito | Chiuso | M-04 |
+| ESI-33 | Esito negativo o revoca: il processo riprende | Messa alla prova | Istruttoria · prima data utile con posto | Istruttoria | M-08 |
+| ESI-34 | Rinvio per acquisire atti | Esecuzione | Esecuzione · esecuzioneAtti giorni, o prima data utile successiva | Esecuzione | X-09 |
+| ESI-35 | Ordinanza emessa (accoglimento, rigetto o inammissibilità) | Esecuzione | Nessuna nuova udienza: fascicolo definito (promemoria opposizione 15 giorni) | Chiuso | X-11, X-04 |
+| ESI-36 | Riunione disposta: scelgo io come proseguire | Riunione | Scegli tu | invariata | R-03 |
+| ESI-37 | Altro: scelgo io la prossima attività | sempre | Scegli tu | invariata | G-01 |
 
 ## 4. Importazione da Excel o CSV (formato generico)
 
@@ -180,7 +238,7 @@ Si usano quando importi senza durata o quando crei un'attività. Si cambiano in 
 Queste regole sono nel documento di specifica, non ancora nel programma:
 
 - **Sospensione feriale dei termini** nei calcoli (CAL-25).
-- **Esiti dell'udienza predibattimentale** (rinvio a giudizio verso altro giudice, restituzione al PM, rinotifica, abbreviato, patteggiamento, MAP, riunione).
+- **Esiti**: l'elenco e la proposta della prossima udienza ci sono (sezione 3-bis). Mancano i **dati di dettaglio** dei flussi: ordine dei testimoni e liste (T-02, T-06), consulenti, relazione del perito 7 giorni prima, campi della remissione di querela (Z-08), campi MAP (data istanza, UEPE, lavoro di pubblica utilità), competenza dell'esecuzione (X-13), contatore delle riserve e dei rinvii, scadenza di deposito della motivazione.
 - **Istruttoria**: testimoni a 30 minuti (1 ora per i lunghi), ordine delle parti, esame dell'imputato, liste dei testimoni, margine di 10 minuti.
 - **Perito**: conferimento dell'incarico (10 minuti), nuova udienza entro 60 giorni, relazione scritta 7 giorni prima, consulenti.
 - **Discussione**, repliche e **riapertura ex art. 507**.

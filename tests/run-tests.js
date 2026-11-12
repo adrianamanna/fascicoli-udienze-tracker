@@ -5,7 +5,7 @@ const path = require('path');
 const assert = require('assert');
 
 const base = path.join(__dirname, '..', 'app', 'js', 'core');
-['versione', 'dates', 'params', 'calendar', 'model', 'predib', 'incamera', 'storage', 'filedati', 'xlsx', 'importer'].forEach(function (m) {
+['versione', 'dates', 'params', 'calendar', 'model', 'predib', 'incamera', 'esiti', 'storage', 'filedati', 'xlsx', 'importer'].forEach(function (m) {
   require(path.join(base, m + '.js'));
 });
 const GC = globalThis.GC;
@@ -992,5 +992,128 @@ test('File dei dati: quale copia usare alla riapertura', function () {
 test('File dei dati: nei browser senza supporto (Node) non è disponibile', function () {
   assert.strictEqual(GC.fileDati.supportato(), false);
 });
+
+// ---------- esiti e prossima azione ----------
+function statoEsiti(tipo, data) {
+  const s = statoDemo();
+  const f = GC.model.addFascicolo(s, { rg: '1/26', imputato: 'Mario Rossi' }).valore;
+  const e = GC.model.addEvento(s, { fascicoloId: f.id, data: data || '2026-11-03', inizio: '09:00', durata: 10, tipo: tipo || 'DIBATTIMENTO' }).valore;
+  return { s: s, f: f, e: e };
+}
+
+test('Esiti: ogni esito ha un tipo di attività valido e una fase valida', function () {
+  Object.keys(GC.esiti.ESITI).forEach(function (c) {
+    const e = GC.esiti.ESITI[c];
+    assert.ok(e.fonte, c + ': manca la regola di riferimento');
+    if (e.fase) assert.ok(GC.model.FASI[e.fase], c + ': fase non valida');
+    if (e.passo.udienza && e.passo.udienza !== 'STESSO') assert.ok(GC.model.TIPI[e.passo.udienza], c + ': tipo non valido');
+    if (e.tipi !== '*') e.tipi.forEach(function (t) { assert.ok(GC.model.TIPI[t], c + ': tipo offerto non valido ' + t); });
+  });
+});
+
+test('Esiti: la riserva è offerta in ogni tipo di udienza (G-12)', function () {
+  Object.keys(GC.model.TIPI).forEach(function (t) {
+    assert.ok(GC.esiti.esitiPer(t).some(function (x) { return x.codice === 'RISERVA'; }), t);
+  });
+});
+
+test('Esiti: riserva = 10 minuti alla prima data utile dopo l\'udienza', function () {
+  const x = statoEsiti('ISTRUTTORIA', '2026-11-03');
+  const r = GC.esiti.proponi(x.s, x.e, 'RISERVA', { oggi: '2026-11-03' });
+  assert.strictEqual(r.azione, 'udienza');
+  assert.strictEqual(r.udienza.tipo, 'RISERVA');
+  assert.strictEqual(r.udienza.durata, 10);
+  assert.strictEqual(r.udienza.data, '2026-11-05'); // giovedì successivo
+  assert.strictEqual(r.fase, 'RISERVA');
+});
+
+test('Esiti: salta giorni bloccati e giorni pieni', function () {
+  const x = statoEsiti('ISTRUTTORIA', '2026-11-03');
+  x.s.parametri.indisponibilita.push({ da: '2026-11-05', a: '2026-11-05', motivo: 'prova' });
+  GC.model.addEvento(x.s, { data: '2026-11-10', inizio: '09:00', durata: 345, tipo: 'ALTRO' });
+  const r = GC.esiti.proponi(x.s, x.e, 'IST_PROSEGUE', { oggi: '2026-11-03' });
+  assert.strictEqual(r.udienza.data, '2026-11-12');
+});
+
+test('Esiti: rinvii per riti, 30 giorni il primo e 30 in più a ogni rinvio (Z-04)', function () {
+  const x = statoEsiti('PREDIB', '2026-11-03');
+  const primo = GC.esiti.proponi(x.s, x.e, 'RITI_RINVIO', { oggi: '2026-11-03' });
+  assert.strictEqual(primo.udienza.data, '2026-12-03'); // +30 = giovedì 3 dicembre
+  const riti = GC.model.addEvento(x.s, { fascicoloId: x.f.id, data: '2026-12-03', inizio: '09:00', durata: 10, tipo: 'RITI' }).valore;
+  const secondo = GC.esiti.proponi(x.s, riti, 'RITI_RINVIO', { oggi: '2026-12-03' });
+  assert.strictEqual(secondo.udienza.data, '2027-02-02'); // +60 giorni
+});
+
+test('Esiti: rinotifica a 3 mesi e MAP 2 a 90 giorni', function () {
+  const x = statoEsiti('PREDIB', '2026-11-03');
+  const r = GC.esiti.proponi(x.s, x.e, 'PRE_RINOTIFICA', { oggi: '2026-11-03' });
+  assert.strictEqual(r.udienza.data, '2027-02-04'); // 3 febbraio è mercoledì, prima data utile giovedì
+  const y = statoEsiti('MAP', '2026-11-03');
+  const m = GC.esiti.proponi(y.s, y.e, 'MAP_AMMISSIBILE', { oggi: '2026-11-03' });
+  assert.strictEqual(m.udienza.data, '2027-02-02');
+});
+
+test('Esiti: il perito si sente entro 60 giorni dall\'ordinanza (art. 508)', function () {
+  const x = statoEsiti('PERITO', '2026-11-03');
+  const r = GC.esiti.proponi(x.s, x.e, 'PER_CONFERITO', { oggi: '2026-11-03' });
+  assert.ok(r.udienza.data <= '2027-01-02', r.udienza.data);
+  assert.ok(r.udienza.data > '2026-12-20', 'l\'ultima data utile, non la prima');
+  assert.strictEqual(r.udienza.durata, 30);
+  const n = GC.esiti.proponi(x.s, x.e, 'PERITO_NOMINA', { oggi: '2026-11-03' });
+  assert.strictEqual(n.udienza.durata, 10, 'conferimento 10 minuti');
+});
+
+test('Esiti: chiusura, sentenza e avvisi senza nuova udienza', function () {
+  const x = statoEsiti('DISCUSSIONE', '2026-11-03');
+  const r = GC.esiti.proponi(x.s, x.e, 'SENTENZA', { oggi: '2026-11-03' });
+  assert.strictEqual(r.azione, 'chiudi');
+  assert.strictEqual(r.fase, 'CHIUSO');
+  assert.strictEqual(r.udienza, null);
+  assert.ok(r.avvisi.some(function (a) { return a.indexOf('2026-11-18') >= 0 || a.indexOf('18/11/2026') >= 0; }), r.avvisi.join('|'));
+  const p = statoEsiti('PREDIB', '2026-11-03');
+  assert.strictEqual(GC.esiti.proponi(p.s, p.e, 'PRE_GIUDIZIO', { oggi: '2026-11-03' }).fase, 'CHIUSO');
+  assert.strictEqual(GC.esiti.proponi(p.s, p.e, 'PRE_ABBREVIATO', { oggi: '2026-11-03' }).udienza.tipo, 'DISCUSSIONE');
+});
+
+test('Esiti: "scelgo io" e discussione nella stessa udienza non creano udienze', function () {
+  const x = statoEsiti('ISTRUTTORIA', '2026-11-03');
+  assert.strictEqual(GC.esiti.proponi(x.s, x.e, 'LIBERO', { oggi: '2026-11-03' }).azione, 'libera');
+  const d = GC.esiti.proponi(x.s, x.e, 'IST_DISCUSSIONE_STESSA', { oggi: '2026-11-03' });
+  assert.strictEqual(d.azione, 'fase');
+  assert.strictEqual(d.fase, 'DISCUSSIONE');
+});
+
+test('Esiti: il rinvio di un incameramento è un\'udienza dibattimentale, non un altro slot da 90 minuti', function () {
+  const x = statoEsiti('INCAMERAMENTO', '2026-11-03');
+  const r = GC.esiti.proponi(x.s, x.e, 'RINVIO', { oggi: '2026-11-03' });
+  assert.strictEqual(r.udienza.tipo, 'DIBATTIMENTO');
+});
+
+test('Esiti: l\'esito si salva sull\'attività e proponi non modifica lo stato', function () {
+  const x = statoEsiti('ISTRUTTORIA', '2026-11-03');
+  const prima = JSON.stringify(x.s);
+  GC.esiti.proponi(x.s, x.e, 'RISERVA', { oggi: '2026-11-03' });
+  assert.strictEqual(JSON.stringify(x.s), prima);
+  GC.model.updateEvento(x.s, x.e.id, { esitoCodice: 'RISERVA' });
+  assert.strictEqual(GC.model.getEvento(x.s, x.e.id).esitoCodice, 'RISERVA');
+});
+
+test('Esiti: fascicoli da decidere (senza esito, o con esito che chiede una nuova udienza)', function () {
+  const x = statoEsiti('ISTRUTTORIA', '2026-11-03');
+  let l = GC.esiti.daDecidere(x.s, '2026-11-04');
+  assert.strictEqual(l.length, 1);
+  assert.strictEqual(l[0].tipo, 'senza-esito');
+  assert.strictEqual(GC.esiti.daDecidere(x.s, '2026-11-03').length, 1, 'il giorno stesso');
+  assert.strictEqual(GC.esiti.daDecidere(x.s, '2026-11-02').length, 0, 'udienza futura');
+  GC.model.updateEvento(x.s, x.e.id, { esitoCodice: 'RISERVA' });
+  l = GC.esiti.daDecidere(x.s, '2026-11-04');
+  assert.strictEqual(l[0].tipo, 'da-fissare');
+  GC.model.addEvento(x.s, { fascicoloId: x.f.id, data: '2026-11-05', inizio: '09:00', durata: 10, tipo: 'RISERVA' });
+  assert.strictEqual(GC.esiti.daDecidere(x.s, '2026-11-04').length, 0, 'c\'è già una udienza dopo');
+  GC.model.updateEvento(x.s, x.e.id, { esitoCodice: 'SENTENZA' });
+  GC.model.updateFascicolo(x.s, x.f.id, { fase: 'CHIUSO' });
+  assert.strictEqual(GC.esiti.daDecidere(x.s, '2026-12-01').length, 0, 'fascicolo chiuso');
+});
+
 
 esegui();

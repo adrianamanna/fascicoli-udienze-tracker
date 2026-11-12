@@ -1,5 +1,5 @@
-FASCICOLI UDIENZE TRACKER - versione 0.4 (Fasi 1-3: calendario, ruolo, predibattimento, incameramento)
-=====================================================
+FASCICOLI UDIENZE TRACKER - versione 0.6
+========================================
 
 COS'È
 Un'app per organizzare il calendario delle udienze. Funziona senza internet e non
@@ -65,6 +65,18 @@ PRIMI PASSI
 4. Calendario: scegli un giorno; nel "righello" vedi le attività e i vuoti
    (zone a righe color ambra). Clicca un vuoto per aggiungere un'attività.
 
+DOPO OGNI UDIENZA: ESITO E PROSSIMA AZIONE
+Nella scheda "Fascicoli" il pannello "Da decidere" elenca i fascicoli la cui ultima udienza
+è passata e non ha un esito (o ha un esito che prevede una nuova udienza non ancora fissata).
+1. Premi "Registra esito" (oppure, dalla scheda del fascicolo o da un'attività, "Esito").
+2. Scegli come è andata: riserva, rinvio, riti o trattative, MAP, perito, prove ammesse,
+   istruttoria conclusa, discussione, sentenza e così via.
+3. L'app propone la prossima attività (tipo, data, ora, durata) e la fase del fascicolo,
+   e ti dice da quale regola nasce. Puoi cambiare data, ora e durata.
+4. Conferma. Se non vuoi decidere subito, "Registra solo l'esito". Niente cambia da solo.
+La tabella completa degli esiti e dei tempi proposti è in docs/regole_implementate_app.md
+(sezione 3-bis).
+
 COSA FA QUESTA VERSIONE
 - Calendario del mese e giornata con righello (9:00-15:00, tolleranza fino alle 15:30,
   pausa 14:00-14:15 non riempibile).
@@ -72,7 +84,8 @@ COSA FA QUESTA VERSIONE
   1-31 agosto senza udienze, indisponibilità, giorni di udienza extra, santo patrono opzionale.
 - Calcolo dei minuti utili, occupati e liberi; individuazione dei vuoti (minimo 10 minuti);
   segnalazione di sovrapposizioni, pausa e tolleranza.
-- Fascicoli e attività; attività provvisorie (appunti personali) che non occupano spazio.
+- Fascicoli con la loro fase; esito di ogni udienza e proposta della prossima attività;
+  attività provvisorie (appunti personali) che non occupano spazio.
 - Importazione da Excel (.xlsx) o CSV, con anteprima, controllo dei duplicati e annullamento.
 - Backup e ripristino; storico delle modifiche.
 
@@ -115,11 +128,15 @@ INCAMERAMENTO (scheda "Incameramento")
   15 giorni per i riti degli immediati) e stato.
 
 COSA NON FA ANCORA (fasi successive)
-- Esiti dell'udienza predibattimentale (rinvio a giudizio, rinotifica, riti, MAP, riunione).
-- Calendarizzazione automatica di istruttoria, perito, discussione, riserve, riti, MAP,
-  esecuzione.
+- Gestione di dettaglio dei flussi: ordine e liste dei testimoni, relazione del perito,
+  consulenti, dati della remissione di querela e della messa alla prova, competenza
+  dell'esecuzione, scadenza di deposito della motivazione.
+- Confronto tra il ruolo Excel e i fascicoli già nell'app (riconciliazione): oggi, importando
+  di nuovo un ruolo, un orario o un asterisco cambiati possono creare doppioni.
+- Sospensione dei termini di legge in agosto nei calcoli.
 - Suggerimenti per riempire i vuoti ed esportazione in PDF/ICS.
 Queste regole sono già descritte nel documento di specifica e saranno aggiunte per fasi.
+Le regole che l'app applica davvero sono in docs/regole_implementate_app.md.
 
 NOTE
 - La data e l'ora dei campi di inserimento seguono la lingua del tuo sistema.

@@ -48,6 +48,16 @@
         relazionePeritoGiorni: 7, // art. 501 c. 1-bis
         listeProveGiorni: 7 // art. 468 c. 1
       },
+      // Intervalli usati per proporre la prossima udienza dopo un esito (giorni, salvo diversa indicazione). Il giudice può sempre cambiare la data.
+      rinvii: {
+        ritiPrimo: 30, // Z-04: primo rinvio per riti o trattative
+        ritiIncremento: 30, // Z-04: ogni rinvio successivo aggiunge questi giorni (da confermare)
+        rinotificaMesi: 3, // P-12: rinotifica, non prima di 3 mesi
+        mapSecondoGiorni: 90, // M-03: da MAP 1 a MAP 2, 3 mesi (i protocolli variano da 3 a 6)
+        esecuzioneAtti: 30, // X-09: rinvio per acquisire atti
+        conferimentoPerito: 10, // PE-01: minuti per il conferimento dell'incarico
+        motivazioneGiorni: 15 // S-10: deposito della motivazione (da verificare, art. 544)
+      },
       giorniUdienza: {
         settimanali: [], // 1 = lunedì ... 5 = venerdì (7 = domenica)
         date: [] // giorni extra 'AAAA-MM-GG'

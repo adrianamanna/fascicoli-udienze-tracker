@@ -596,7 +596,6 @@
     const rinvio0 = base.rinvioDal && D.isValidYmd(base.rinvioDal) ? D.fmtIt(base.rinvioDal) : (base.rinvioDal || '');
     const fRinvio = h('input', { type: 'text', value: rinvio0, placeholder: 'gg/mm/aaaa oppure 1 UD' });
     const fEsito = h('input', { type: 'text', value: base.esito || '', placeholder: 'Da compilare dopo l\'udienza' });
-    const fFase = h('select', null, h('option', { value: '' }, esistente ? 'Non indicata (si ricava: ' + M.FASI[M.faseDi(esistente, stato)] + ')' : 'Non indicata'), Object.keys(M.FASI).map(function (k) { return h('option', { value: k, selected: k === base.fase }, M.FASI[k]); }));
     const fNote = h('textarea', null, base.note || '');
     const fSovr = h('input', { type: 'checkbox', checked: !!base.sovrapponibile, onChange: aggiornaMessaggi });
     const msg = h('div', { class: 'intera' });
@@ -687,6 +686,7 @@
       btnSalva,
       h('button', { class: 'btn', type: 'button', onClick: function () { dlg.close(); } }, 'Annulla'),
       h('span', { class: 'spazio' }),
+      esistente ? h('button', { class: 'btn', type: 'button', onClick: function () { dlg.close(); dialogoEsito(esistente.id); } }, 'Esito e prossima azione') : null,
       esistente ? h('button', { class: 'btn btn-pericolo', type: 'button', onClick: function () {
         if (!window.confirm('Eliminare questa attività?')) return;
         M.deleteEvento(stato, esistente.id);
@@ -717,6 +717,117 @@
     sincronizzaFascicolo();
   }
 
+  /* Esito di un'udienza e prossima azione: l'app propone, il giudice conferma (nulla cambia da solo). */
+  function dialogoEsito(eventoId) {
+    const ev = M.getEvento(stato, eventoId);
+    if (!ev) return;
+    const E = GC.esiti;
+    const f = ev.fascicoloId ? M.getFascicolo(stato, ev.fascicoloId) : null;
+    const sel = h('select', null,
+      h('option', { value: '' }, 'Scegli l\'esito…'),
+      E.esitiPer(ev.tipo).map(function (x) { return h('option', { value: x.codice, selected: x.codice === ev.esitoCodice }, x.label); }));
+    const fData = h('input', { type: 'date' });
+    const fOra = h('input', { type: 'time' });
+    const fDur = h('input', { type: 'number', min: 1, max: 600, step: 1 });
+    const fFase = h('input', { type: 'checkbox', checked: true });
+    const box = h('div', { class: 'intera' });
+    const errori = h('div', { class: 'intera', role: 'alert' });
+    const btnPrincipale = h('button', { class: 'btn btn-primario', type: 'button' }, 'Registra l\'esito');
+    let prop = null;
+
+    function dati() {
+      return { fascicoloId: ev.fascicoloId, data: fData.value, inizio: fOra.value, durata: parseInt(fDur.value, 10), tipo: prop.udienza.tipo, stato: 'ufficiale', titolo: '', note: '', rinvioDal: ev.data, esito: '', sovrapponibile: false };
+    }
+
+    function ridisegna() {
+      errori.replaceChildren();
+      box.replaceChildren();
+      prop = sel.value ? E.proponi(stato, ev, sel.value) : null;
+      if (!prop) {
+        btnPrincipale.textContent = 'Registra l\'esito';
+        btnPrincipale.disabled = true;
+        return;
+      }
+      btnPrincipale.disabled = false;
+      const parti = [h('div', { class: 'aiuto' }, 'Regola: ' + prop.fonte + '. ' + prop.motivo)];
+      if (prop.azione === 'udienza' && f) {
+        const u = prop.udienza;
+        fData.value = u.data || '';
+        fOra.value = u.inizio || '';
+        fDur.value = u.durata;
+        parti.push(h('h3', { style: 'font-size:1rem;margin:8px 0 4px' }, 'Prossima attività proposta: ' + M.TIPI[u.tipo].label));
+        parti.push(h('div', { class: 'griglia-campi' }, h('label', { class: 'campo' }, 'Data', fData), h('label', { class: 'campo' }, 'Ora', fOra), h('label', { class: 'campo' }, 'Durata (minuti)', fDur)));
+        [fData, fOra, fDur].forEach(function (c) { c.oninput = avvisiData; });
+        btnPrincipale.textContent = 'Registra l\'esito e crea l\'attività';
+      } else if (prop.azione === 'udienza') {
+        parti.push(h('div', { class: 'messaggio avviso' }, 'L\'attività non è collegata a un fascicolo: posso registrare l\'esito, ma non proporre la prossima udienza.'));
+        btnPrincipale.textContent = 'Registra l\'esito';
+      } else if (prop.azione === 'chiudi') btnPrincipale.textContent = 'Registra l\'esito e chiudi il fascicolo';
+      else if (prop.azione === 'fase') btnPrincipale.textContent = 'Registra l\'esito e aggiorna la fase';
+      else btnPrincipale.textContent = 'Registra l\'esito e scegli l\'attività';
+      prop.avvisi.forEach(function (a) { parti.push(h('div', { class: 'messaggio avviso' }, a)); });
+      if (f && prop.fase && M.faseDi(f, stato) !== prop.fase) {
+        fFase.checked = true;
+        parti.push(h('label', { class: 'casella' }, fFase, 'Aggiorna la fase del fascicolo: ' + M.FASI[M.faseDi(f, stato)] + ' → ' + M.FASI[prop.fase]));
+      } else fFase.checked = false;
+      parti.push(h('div', { id: 'avvisi-data' }));
+      box.append(h('div', null, parti));
+      avvisiData();
+    }
+
+    function avvisiData() {
+      const c = box.querySelector('#avvisi-data');
+      if (!c) return;
+      c.replaceChildren();
+      if (!(prop && prop.azione === 'udienza' && f)) return;
+      const d = dati();
+      if (!d.data || !d.inizio || !(d.durata > 0)) return;
+      const w = C.checkEvent(stato, d, {});
+      if (w.length) c.append(h('div', { class: 'messaggio avviso' }, h('ul', null, w.map(function (x) { return h('li', null, x.testo); })), h('span', { class: 'aiuto' }, 'Puoi confermare comunque: la decisione è tua.')));
+    }
+
+    function registra(creaUdienza) {
+      errori.replaceChildren();
+      if (!prop) return;
+      let nuova = null;
+      if (creaUdienza && prop.azione === 'udienza' && f) {
+        nuova = dati();
+        const err = M.validateEvento(stato, nuova);
+        if (err.length) {
+          errori.append(h('div', { class: 'messaggio errore' }, h('ul', null, err.map(function (x) { return h('li', null, x); }))));
+          return;
+        }
+      }
+      M.updateEvento(stato, ev.id, { esitoCodice: sel.value, esito: ev.esito || prop.label });
+      if (f && prop.fase && fFase.checked) M.updateFascicolo(stato, f.id, { fase: prop.fase });
+      if (nuova) M.addEvento(stato, nuova);
+      dlg.close();
+      if (creaUdienza && prop.azione === 'libera' && f) {
+        ui.vista = 'calendario';
+        dialogoEvento({ fascicoloId: f.id, data: ev.data });
+        return;
+      }
+      if (nuova) scegliGiorno(nuova.data);
+      aggiorna();
+    }
+
+    sel.addEventListener('change', ridisegna);
+    btnPrincipale.addEventListener('click', function () { registra(true); });
+    const piede = [
+      btnPrincipale,
+      h('button', { class: 'btn', type: 'button', onClick: function () { registra(false); } }, 'Registra solo l\'esito'),
+      h('button', { class: 'btn', type: 'button', onClick: function () { dlg.close(); } }, 'Annulla')
+    ];
+    const corpo = [
+      h('p', { class: 'aiuto intera' }, (f ? (f.rg || '') + ' ' + f.imputato + ' · ' : '') + M.TIPI[ev.tipo].label + ' del ' + D.fmtIt(ev.data) + ' ' + ev.inizio + '. Scegli come è andata: l\'app propone la prossima attività e tu confermi. Nulla cambia finché non confermi.'),
+      h('label', { class: 'campo intera' }, 'Esito dell\'udienza', sel),
+      box,
+      errori
+    ];
+    const dlg = apriDialogo('Esito e prossima azione', corpo, piede, { focus: sel });
+    ridisegna();
+  }
+
   function dialogoFascicolo(id, preset) {
     const esistente = id ? M.getFascicolo(stato, id) : null;
     const base = esistente || Object.assign({ rg: '', imputato: '', origine: 'ALTRO', detenuto: false, note: '', reato: '', pm: '', nrOrd: '', ricezione: '', notificaCitazione: '', urgente: false, predibDaFissare: false, dataProvvedimento: '', incameramentoDaFissare: false }, preset || {});
@@ -734,6 +845,7 @@
     const fDaFissare = h('input', { type: 'checkbox', checked: !!base.predibDaFissare });
     const fProv = h('input', { type: 'date', value: base.dataProvvedimento || '' });
     const fDaInc = h('input', { type: 'checkbox', checked: !!base.incameramentoDaFissare });
+    const fFase = h('select', null, h('option', { value: '' }, esistente ? 'Non indicata (si ricava: ' + M.FASI[M.faseDi(esistente, stato)] + ')' : 'Non indicata'), Object.keys(M.FASI).map(function (k) { return h('option', { value: k, selected: k === base.fase }, M.FASI[k]); }));
     const errori = h('div', { class: 'intera', role: 'alert' });
 
     const corpo = [
@@ -764,7 +876,8 @@
                 h('td', null, D.fmtIt(e.data) + ' ' + e.inizio),
                 h('td', null, e.titolo || M.TIPI[e.tipo].label),
                 h('td', null, fmtMin(e.durata)),
-                h('td', null, h('button', { class: 'btn btn-piccolo', type: 'button', onClick: function () { dlg.close(); dialogoEvento({ id: e.id }); } }, 'Modifica')));
+                h('td', null, e.esitoCodice && GC.esiti.ESITI[e.esitoCodice] ? h('span', { class: 'pillola' }, GC.esiti.ESITI[e.esitoCodice].label) : (e.esito || '')),
+                h('td', null, h('button', { class: 'btn btn-piccolo', type: 'button', onClick: function () { dlg.close(); dialogoEsito(e.id); } }, 'Esito'), ' ', h('button', { class: 'btn btn-piccolo', type: 'button', onClick: function () { dlg.close(); dialogoEvento({ id: e.id }); } }, 'Modifica')));
             }))))
           : h('div', { class: 'aiuto' }, 'Nessuna attività collegata.'),
         h('div', { style: 'margin-top:8px' }, h('button', { class: 'btn', type: 'button', onClick: function () { dlg.close(); dialogoEvento({ fascicoloId: esistente.id, data: ui.giorno }); } }, 'Aggiungi attività'))));
@@ -1199,6 +1312,26 @@
 
   /* ---------- fascicoli ---------- */
 
+  /** Fascicoli per cui il giudice deve ancora registrare l'esito o fissare la prossima udienza. */
+  function pannelloDaDecidere(oggi) {
+    const lista = GC.esiti.daDecidere(stato, oggi);
+    if (!lista.length) return null;
+    const MAX = 25;
+    const dett = h('details', { class: 'sezione', open: lista.length <= 8 },
+      h('summary', { style: 'cursor:pointer;font-weight:600;font-size:1.05rem' }, 'Da decidere (' + lista.length + ')'),
+      h('p', { class: 'aiuto' }, 'L\'ultima udienza di questi fascicoli è passata e manca l\'esito, oppure l\'esito prevede una nuova udienza che non è ancora stata fissata. L\'app propone, tu confermi.'),
+      h('div', { class: 'scorri', style: 'max-height:none' }, h('table', { class: 'tabella' },
+        h('tbody', null, lista.slice(0, MAX).map(function (x) {
+          return h('tr', null,
+            h('td', null, (x.fascicolo.rg || '—') + ' ' + x.fascicolo.imputato),
+            h('td', null, M.TIPI[x.evento.tipo].label + ' del ' + D.fmtShort(x.evento.data)),
+            h('td', null, x.tipo === 'senza-esito' ? 'Esito da registrare' : 'Esito: ' + x.esito + ' · udienza da fissare'),
+            h('td', null, h('button', { class: 'btn btn-piccolo btn-primario', onClick: function () { dialogoEsito(x.evento.id); } }, x.tipo === 'senza-esito' ? 'Registra esito' : 'Decidi')));
+        })))),
+      lista.length > MAX ? h('p', { class: 'aiuto' }, 'Altri ' + (lista.length - MAX) + ' fascicoli: compariranno man mano che li gestisci.') : null);
+    return dett;
+  }
+
   function vistaFascicoli() {
     const elenco = M.filtraFascicoli(stato, { testo: ui.cercaFasc, fase: ui.faseFasc });
     const conta = {};
@@ -1224,6 +1357,7 @@
     return [
       h('h1', { class: 'titolo-pagina' }, 'Fascicoli'),
       h('p', { class: 'sottotitolo' }, 'Elenco dei fascicoli con la prossima attività prevista. I fascicoli nascono anche dall\'importazione da Excel o quando aggiungi un\'attività.'),
+      pannelloDaDecidere(oggi),
       h('div', { class: 'barra-strumenti' }, h('label', { class: 'campo' }, 'Cerca', ricerca), h('label', { class: 'campo' }, 'Fase', selFase), h('button', { class: 'btn btn-primario', onClick: function () { dialogoFascicolo(null); } }, 'Nuovo fascicolo')),
       elenco.length
         ? h('div', { class: 'scorri', style: 'max-height:none' }, h('table', { class: 'tabella' },

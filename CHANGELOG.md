@@ -1,6 +1,9 @@
 # Novità per versione
 
-## 0.6.0 — in lavorazione
+## 0.6.0 — novembre 2026
+- **Esito e prossima azione**: per ogni udienza scegli l'esito da un elenco (riserva, rinvio, riti o trattative, MAP, perito, abbreviato, prove ammesse, istruttoria conclusa, discussione, sentenza e altri, 37 in tutto, ricavati dalla specifica). L'app propone la prossima attività alla prima data utile con posto, o con l'intervallo previsto dalla regola, e la fase. **Tu confermi o cambi** data, ora e durata: niente cambia da solo.
+- Scheda **Fascicoli**: pannello "Da decidere" con i fascicoli la cui ultima udienza non ha esito o aspetta una nuova udienza.
+- **Corretto un errore**: "Nuovo fascicolo" e "Apri scheda" davano un errore di script (introdotto in questa stessa versione, mai pubblicato).
 - **Fase del fascicolo**: ogni fascicolo ha una fase (predibattimento, in attesa di incameramento, istruttoria, discussione, in riserva, riti o trattative, messa alla prova, esecuzione, chiuso). Si sceglie nella scheda; se non è indicata, l'app la ricava dai segni che ci sono già (da fissare in predibattimento, da incamerare, prossima attività).
 - Scheda **Fascicoli**: colonna "Fase" e filtro per fase con il numero di fascicoli per ciascuna.
 - Il cambio di fase è registrato nello storico.
